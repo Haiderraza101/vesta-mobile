@@ -11,7 +11,8 @@ export default function Home() {
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView className="flex-1 px-6 pt-8">
         <View className="flex-row items-center gap-3 mb-8">
-          <Smartphone size={32} color="#007AFF" />
+          {/* @ts-ignore */}
+          <Smartphone size={64} color="white" />
           <View>
             <Text variant="h1" weight="bold">Vesta</Text>
             <Text variant="caption" className="text-muted-foreground">React Native + Firebase</Text>
