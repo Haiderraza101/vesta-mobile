@@ -1,30 +1,33 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  // NOTE: Update this to include the paths to all of your component files.
   content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}"],
   presets: [require("nativewind/preset")],
   theme: {
     extend: {
       colors: {
         primary: {
-          DEFAULT: "#007AFF",
+          DEFAULT: "#4C6FFF",
           foreground: "#FFFFFF",
         },
         secondary: {
-          DEFAULT: "#F2F2F7",
-          foreground: "#000000",
+          DEFAULT: "#F8FAFC",
+          foreground: "#0F172A",
         },
-        destructive: {
-          DEFAULT: "#FF3B30",
+        accent: {
+          DEFAULT: "#4C6FFF",
           foreground: "#FFFFFF",
         },
         muted: {
-          DEFAULT: "#8E8E93",
-          foreground: "#FFFFFF",
+          DEFAULT: "#64748B",
+          foreground: "#F8FAFC",
         },
+        border: "#F1F5F9",
         background: "#FFFFFF",
-        foreground: "#000000",
-        border: "#C7C7CC",
+        foreground: "#0F172A",
+        destructive: "#EF4444",
+      },
+      fontFamily: {
+        poppins: ["Poppins"],
       },
     },
   },

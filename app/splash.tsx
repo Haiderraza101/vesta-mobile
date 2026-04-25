@@ -1,21 +1,29 @@
 import React, { useEffect } from "react";
-import { View, Animated, Dimensions } from "react-native";
+import { View, Animated, Dimensions, StatusBar } from "react-native";
 import { useRouter } from "expo-router";
 import { Text } from "../components/ui/Text";
-import { Smartphone } from "lucide-react-native";
+import { Sparkles } from "lucide-react-native";
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { height } = Dimensions.get("window");
 
 export default function SplashScreen() {
   const router = useRouter();
   const fadeAnim = new Animated.Value(0);
-  const slideAnim = new Animated.Value(height / 10);
+  const scaleAnim = new Animated.Value(0.9);
+  const slideAnim = new Animated.Value(20);
 
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 1000,
+        duration: 1200,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        tension: 10,
+        friction: 4,
         useNativeDriver: true,
       }),
       Animated.timing(slideAnim, {
@@ -25,34 +33,46 @@ export default function SplashScreen() {
       }),
     ]).start();
 
-    // Navigate to Onboarding after 3 seconds
     const timer = setTimeout(() => {
       router.replace("/onboarding");
-    }, 3000);
+    }, 2500);
 
     return () => clearTimeout(timer);
   }, []);
 
   return (
-    <View className="flex-1 bg-primary items-center justify-center">
-      <Animated.View
-        style={{
-          opacity: fadeAnim,
-          transform: [{ translateY: slideAnim }],
-          alignItems: "center",
-        }}
+    <View className="flex-1">
+      <StatusBar barStyle="light-content" />
+      <LinearGradient
+        colors={['#4C6FFF', '#3B82F6']}
+        className="flex-1 items-center justify-center"
       >
-        <View className="bg-white/20 p-6 rounded-[40px] mb-6">
-           {/* @ts-ignore */}
-           <Smartphone size={64} color="white" />
+        <Animated.View
+          style={{
+            opacity: fadeAnim,
+            transform: [
+              { scale: scaleAnim },
+              { translateY: slideAnim }
+            ],
+            alignItems: "center",
+          }}
+        >
+          <View className="bg-white/10 p-8 rounded-[45px] mb-8 border border-white/20">
+             <Sparkles size={72} color="white" fill="white" />
+          </View>
+          <Text weight="bold" className="text-white text-[48px] tracking-tight">
+            Vesta
+          </Text>
+          <View className="h-[2px] w-12 bg-white/30 my-4 rounded-full" />
+          <Text className="text-white/80 tracking-[4px] uppercase text-[11px] font-bold">
+            Premium Home Services
+          </Text>
+        </Animated.View>
+        
+        <View className="absolute bottom-12 items-center">
+          <Text className="text-white/40 text-xs tracking-widest">VERSION 2.0</Text>
         </View>
-        <Text variant="h1" weight="bold" className="text-white text-4xl tracking-widest">
-          VESTA
-        </Text>
-        <Text className="text-white/60 mt-2 tracking-widest uppercase text-xs font-medium">
-          Home Services Reimagined
-        </Text>
-      </Animated.View>
+      </LinearGradient>
     </View>
   );
 }

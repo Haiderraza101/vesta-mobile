@@ -1,37 +1,46 @@
-import { Text as RNText, TextProps } from "react-native";
+import { Text as RNText, TextProps as RNTextProps } from "react-native";
 import { cn } from "../../utils/utils";
 
-interface CustomTextProps extends TextProps {
-  variant?: "h1" | "h2" | "h3" | "body" | "caption" | "small";
-  weight?: "normal" | "medium" | "semibold" | "bold";
+type TextVariant = "h1" | "h2" | "h3" | "h4" | "body" | "small" | "caption";
+type TextWeight = "normal" | "medium" | "semibold" | "bold";
+
+interface TextProps extends RNTextProps {
+  variant?: TextVariant;
+  weight?: TextWeight;
   className?: string;
 }
+
+const variants = {
+  h1: "text-3xl",
+  h2: "text-2xl",
+  h3: "text-xl",
+  h4: "text-lg",
+  body: "text-base",
+  small: "text-sm",
+  caption: "text-xs",
+};
+
+const weights = {
+  normal: "font-normal",
+  medium: "font-medium",
+  semibold: "font-semibold",
+  bold: "font-bold",
+};
 
 export function Text({
   variant = "body",
   weight = "normal",
   className,
   ...props
-}: CustomTextProps) {
-  const variants = {
-    h1: "text-3xl",
-    h2: "text-2xl",
-    h3: "text-xl",
-    body: "text-base",
-    caption: "text-sm",
-    small: "text-xs",
-  };
-
-  const weights = {
-    normal: "font-normal",
-    medium: "font-medium",
-    semibold: "font-semibold",
-    bold: "font-bold",
-  };
-
+}: TextProps) {
   return (
     <RNText
-      className={cn(variants[variant], weights[weight], "text-foreground", className)}
+      className={cn(
+        "text-foreground font-poppins",
+        variants[variant],
+        weights[weight],
+        className
+      )}
       {...props}
     />
   );
