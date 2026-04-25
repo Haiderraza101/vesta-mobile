@@ -13,7 +13,7 @@ export default function Home() {
         <View className="flex-row items-center gap-3 mb-8">
           <Smartphone size={32} color="#007AFF" />
           <View>
-            <Text variant="h1" weight="bold">Production App</Text>
+            <Text variant="h1" weight="bold">Vesta</Text>
             <Text variant="caption" className="text-muted-foreground">React Native + Firebase</Text>
           </View>
         </View>
