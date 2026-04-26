@@ -5,12 +5,13 @@ import { Text } from './Text';
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'white';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   disabled?: boolean;
   className?: string;
-  icon?: React.ReactNode;
+  iconLeft?: React.ReactNode;
+  iconRight?: React.ReactNode;
 }
 
 export function Button({ 
@@ -21,36 +22,39 @@ export function Button({
   loading = false, 
   disabled = false, 
   className = '',
-  icon
+  iconLeft,
+  iconRight
 }: ButtonProps) {
-  const baseStyles = "flex-row items-center justify-center rounded-[18px]";
+  const baseStyles = "flex-row items-center justify-center rounded-[22px]";
   
   const variants = {
-    primary: "bg-primary",
+    primary: "bg-[#4C6FFF]",
     secondary: "bg-slate-900",
-    outline: "bg-transparent border-2 border-primary/20",
+    outline: "bg-transparent border-[1.5px] border-slate-200",
     ghost: "bg-transparent",
-    destructive: "bg-red-500",
+    destructive: "bg-rose-500",
+    white: "bg-white",
   };
 
   const sizes = {
-    sm: "px-4 py-2.5",
-    md: "px-6 py-4",
-    lg: "px-8 py-5",
+    sm: "px-5 py-3",
+    md: "px-7 py-4",
+    lg: "px-9 py-5",
   };
 
   const textColors = {
     primary: "text-white",
     secondary: "text-white",
-    outline: "text-primary",
+    outline: "text-slate-700",
     ghost: "text-slate-600",
     destructive: "text-white",
+    white: "text-slate-900",
   };
 
   const textSizes = {
-    sm: "text-sm",
-    md: "text-base",
-    lg: "text-lg",
+    sm: "text-[13px] tracking-wide",
+    md: "text-[15px] tracking-wide",
+    lg: "text-[17px] tracking-wide",
   };
 
   return (
@@ -58,16 +62,18 @@ export function Button({
       activeOpacity={0.8}
       onPress={onPress}
       disabled={disabled || loading}
-      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className} ${disabled ? 'opacity-50' : ''}`}
+      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className} ${disabled ? 'opacity-40' : ''}`}
+      style={variant === 'white' ? { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 } : {}}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'outline' ? '#4C6FFF' : 'white'} />
+        <ActivityIndicator color={variant === 'outline' || variant === 'white' ? '#4C6FFF' : 'white'} />
       ) : (
         <View className="flex-row items-center justify-center">
-          {icon && <View className="mr-2">{icon}</View>}
+          {iconLeft && <View className="mr-2.5">{iconLeft}</View>}
           <Text weight="bold" className={`${textColors[variant]} ${textSizes[size]}`}>
             {title}
           </Text>
+          {iconRight && <View className="ml-2.5">{iconRight}</View>}
         </View>
       )}
     </TouchableOpacity>

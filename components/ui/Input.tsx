@@ -1,12 +1,14 @@
-import React from 'react';
-import { View, TextInput, TextInputProps } from 'react-native';
+import React, { useState } from 'react';
+import { View, TextInput, TextInputProps, TouchableOpacity } from 'react-native';
 import { Text } from './Text';
+import { Eye, EyeOff } from 'lucide-react-native';
 
 interface InputProps extends TextInputProps {
   label?: string;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   className?: string;
+  isPassword?: boolean;
 }
 
 export function Input({ 
@@ -18,27 +20,47 @@ export function Input({
   leftIcon, 
   rightIcon,
   className = '',
+  isPassword,
   style,
   ...props
 }: InputProps) {
+  const [isFocused, setIsFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const isActuallySecure = isPassword ? !showPassword : secureTextEntry;
+
   return (
-    <View className={`mb-4 ${className}`}>
+    <View className={`mb-5 ${className}`}>
       {label && (
-        <Text weight="bold" className="text-slate-700 mb-2 ml-1 text-sm">{label}</Text>
+        <Text weight="bold" className="text-slate-800 mb-2.5 ml-1 text-[13px] uppercase tracking-widest">{label}</Text>
       )}
-      <View className="flex-row items-center bg-slate-50 rounded-2xl px-5 h-[58px] border border-slate-100">
-        {leftIcon && <View className="mr-3">{leftIcon}</View>}
+      <View 
+        className={`flex-row items-center bg-white rounded-[24px] px-5 h-[64px] border transition-all ${
+          isFocused ? 'border-[#4C6FFF] shadow-lg shadow-primary/10' : 'border-slate-100'
+        }`}
+        style={{ shadowColor: isFocused ? '#4C6FFF' : '#000', shadowOpacity: isFocused ? 0.1 : 0.02, shadowRadius: 15, elevation: isFocused ? 4 : 1 }}
+      >
+        {leftIcon && <View className="mr-3.5 opacity-80">{leftIcon}</View>}
         <TextInput
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
           placeholderTextColor="#94A3B8"
-          secureTextEntry={secureTextEntry}
+          secureTextEntry={isActuallySecure}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           className="flex-1 text-slate-900 text-base font-medium"
           style={[{ fontFamily: 'Poppins' }, style]}
+          selectionColor="#4C6FFF"
           {...props}
         />
-        {rightIcon && <View className="ml-3">{rightIcon}</View>}
+        {isPassword ? (
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} className="ml-3 p-1">
+            {showPassword ? <EyeOff size={20} color="#94A3B8" /> : <Eye size={20} color="#94A3B8" />}
+          </TouchableOpacity>
+        ) : rightIcon ? (
+          <View className="ml-3">{rightIcon}</View>
+        ) : null}
       </View>
     </View>
   );
