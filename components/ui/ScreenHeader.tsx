@@ -8,6 +8,7 @@ interface ScreenHeaderProps {
   subtitle?: string;
   showProfile?: boolean;
   showNotification?: boolean;
+  hasUnread?: boolean;
   onNotificationPress?: () => void;
 }
 
@@ -16,25 +17,26 @@ export function ScreenHeader({
   subtitle, 
   showProfile = true, 
   showNotification = true,
+  hasUnread = true,
   onNotificationPress 
 }: ScreenHeaderProps) {
   return (
     <View className="px-6 py-4 flex-row items-center justify-between">
-      <View className="flex-row items-center gap-3">
+      <View className="flex-row items-center gap-3.5">
         {showProfile && (
-          <View className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-md">
+          <View className="w-[52px] h-[52px] rounded-2xl overflow-hidden border-2 border-white shadow-xl shadow-slate-200">
             <Image 
-              source={{ uri: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200&auto=format&fit=crop" }} 
+              source={{ uri: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=200&auto=format&fit=crop" }} 
               className="w-full h-full"
             />
           </View>
         )}
         <View>
-          <Text weight="bold" className="text-[17px] text-slate-900">{title}</Text>
+          <Text weight="bold" className="text-[18px] text-slate-900 leading-6">{title}</Text>
           {subtitle && (
             <View className="flex-row items-center gap-1 mt-0.5">
-              <MapPin size={13} color="#94A3B8" />
-              <Text className="text-slate-500 text-[13px]">{subtitle}</Text>
+              <MapPin size={12} color="#4C6FFF" strokeWidth={2.5} />
+              <Text weight="medium" className="text-slate-500 text-[13px]">{subtitle}</Text>
             </View>
           )}
         </View>
@@ -43,9 +45,14 @@ export function ScreenHeader({
       {showNotification && (
         <TouchableOpacity 
           onPress={onNotificationPress}
-          className="w-11 h-11 items-center justify-center rounded-[14px] bg-white shadow-sm border border-slate-50"
+          className="w-[52px] h-[52px] items-center justify-center rounded-2xl bg-white shadow-lg shadow-slate-100 border border-slate-50"
         >
-          <Bell size={20} color="#1E293B" />
+          <View>
+            <Bell size={22} color="#1E293B" strokeWidth={2} />
+            {hasUnread && (
+              <View className="absolute top-[-2] right-[-2] w-3 h-3 bg-rose-500 rounded-full border-2 border-white" />
+            )}
+          </View>
         </TouchableOpacity>
       )}
     </View>
