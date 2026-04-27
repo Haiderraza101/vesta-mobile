@@ -79,6 +79,10 @@ export default function HomeDashboard() {
     }
   };
 
+  const filteredServices = activeCategory === "All" 
+    ? popularServices 
+    : popularServices.filter(s => s.category === activeCategory);
+
   if (loading) {
     return (
       <View className="flex-1 items-center justify-center bg-white">
@@ -151,7 +155,7 @@ export default function HomeDashboard() {
               <View className="px-6 pb-20">
                 <SectionHeader title="Popular Service" onSeeAll={() => router.push('/bookings')} />
                 <View className="gap-y-6">
-                  {popularServices.map((service) => (
+                  {filteredServices.map((service) => (
                     <Card 
                       key={service.id} 
                       className="overflow-hidden"
