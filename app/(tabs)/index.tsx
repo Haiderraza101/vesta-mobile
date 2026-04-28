@@ -209,6 +209,25 @@ export default function HomeDashboard() {
                 </View>
               </View>
 
+              {/* Stats Overview */}
+              <View className="flex-row gap-4 mb-10">
+                <View className="flex-1 bg-white p-6 rounded-[32px] border border-slate-50 shadow-sm">
+                  <Text className="text-slate-400 text-[11px] uppercase tracking-widest font-bold mb-2">Earnings</Text>
+                  <Text weight="bold" className="text-2xl text-slate-900">$2.4k</Text>
+                </View>
+                <View className="flex-1 bg-white p-6 rounded-[32px] border border-slate-50 shadow-sm">
+                  <Text className="text-slate-400 text-[11px] uppercase tracking-widest font-bold mb-2">Jobs</Text>
+                  <Text weight="bold" className="text-2xl text-slate-900">48</Text>
+                </View>
+                <View className="flex-1 bg-white p-6 rounded-[32px] border border-slate-50 shadow-sm">
+                  <Text className="text-slate-400 text-[11px] uppercase tracking-widest font-bold mb-2">Rating</Text>
+                  <View className="flex-row items-center gap-1">
+                    <Text weight="bold" className="text-2xl text-slate-900">4.9</Text>
+                    <Star size={14} color="#F59E0B" fill="#F59E0B" />
+                  </View>
+                </View>
+              </View>
+
               {incomingBookings.length === 0 ? (
                 <View className="bg-white p-10 rounded-[40px] items-center border border-slate-50 shadow-sm mt-10">
                   <View className="w-20 h-20 bg-slate-50 rounded-full items-center justify-center mb-6">
