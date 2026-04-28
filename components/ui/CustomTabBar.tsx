@@ -1,7 +1,7 @@
 import React from "react";
-import { View, TouchableOpacity, StyleSheet, Animated } from "react-native";
+import { View, TouchableOpacity, StyleSheet, Animated, Platform } from "react-native";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { Home, Calendar, MessageSquare, User } from "lucide-react-native";
+import { Home, Calendar, LayoutGrid, User } from "lucide-react-native";
 import { Text } from "./Text";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -9,7 +9,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.container, { bottom: Math.max(insets.bottom, 20) }]}>
+    <View style={[styles.container, { bottom: Math.max(insets.bottom, 16) }]}>
       <View style={styles.tabBar}>
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
@@ -32,11 +32,11 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
             const size = 20;
             
             switch (route.name) {
-              case "index": return <Home size={size} color={color} />;
-              case "bookings": return <Calendar size={size} color={color} />;
-              case "categories": return <MessageSquare size={size} color={color} />;
-              case "account": return <User size={size} color={color} />;
-              default: return <Home size={size} color={color} />;
+              case "index": return <Home size={size} color={color} strokeWidth={2.5} />;
+              case "bookings": return <Calendar size={size} color={color} strokeWidth={2.5} />;
+              case "categories": return <LayoutGrid size={size} color={color} strokeWidth={2.5} />;
+              case "account": return <User size={size} color={color} strokeWidth={2.5} />;
+              default: return <Home size={size} color={color} strokeWidth={2.5} />;
             }
           };
 
@@ -77,29 +77,30 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 1000,
   },
   tabBar: {
     flexDirection: 'row',
-    height: 70,
+    height: 74,
     backgroundColor: '#FFFFFF',
-    borderRadius: 35,
-    paddingHorizontal: 10,
+    borderRadius: 37,
+    paddingHorizontal: 8,
     alignItems: 'center',
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 15,
-    elevation: 8,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
+    shadowColor: "#4C6FFF",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 12,
+    borderWidth: 1.5,
+    borderColor: 'rgba(241, 245, 249, 0.5)',
   },
   tabItem: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 5,
+    marginHorizontal: 4,
     overflow: 'hidden',
   },
   tabItemActive: {
@@ -111,19 +112,21 @@ const styles = StyleSheet.create({
     borderRadius: 50,
   },
   iconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
   iconContainerActive: {
-    backgroundColor: '#4C6FFF', // The theme blue
+    backgroundColor: '#4C6FFF',
   },
   label: {
-    color: '#0F172A',
+    color: '#1E293B',
     marginLeft: 10,
-    fontSize: 14,
+    fontSize: 13,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
 });
