@@ -14,7 +14,8 @@ import { useToast } from "../../context/ToastContext";
 import { useAuth } from "../../context/AuthContext";
 import { serviceService, Category, Service } from "../../services/serviceService";
 import { bookingService, Booking } from "../../services/bookingService";
-import { Search, SlidersHorizontal, ArrowUpRight, Sparkles, Star, Clock, X, CheckCircle2, Package, Calendar } from "lucide-react-native";
+import { notificationService, Notification } from "../../services/notificationService";
+import { Search, SlidersHorizontal, ArrowUpRight, Sparkles, Star, Clock, X, CheckCircle2, Package, Calendar, Bell, Ticket } from "lucide-react-native";
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -32,6 +33,7 @@ export default function HomeDashboard() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [popularServices, setPopularServices] = useState<Service[]>([]);
   const [incomingBookings, setIncomingBookings] = useState<Booking[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeCategory, setActiveCategory] = useState("All");
@@ -62,6 +64,17 @@ export default function HomeDashboard() {
 
   useEffect(() => {
     fetchData();
+    
+    let unsubNotifs: () => void;
+    if (user?.uid) {
+      unsubNotifs = notificationService.subscribeToNotifications(user.uid, (data) => {
+        setNotifications(data);
+      });
+    }
+
+    return () => {
+      unsubNotifs && unsubNotifs();
+    };
   }, [isProvider, user?.uid]);
 
   const onRefresh = () => {
@@ -251,7 +264,6 @@ export default function HomeDashboard() {
           )}
         </ScrollView>
 
-        {/* Modal for Service Details */}
         <AppModal visible={!!selectedService} onClose={() => setSelectedService(null)} title="Service Details">
           {selectedService && (
             <View className="mt-4">
@@ -288,7 +300,39 @@ export default function HomeDashboard() {
           )}
         </AppModal>
 
-        {/* Other Modals (Search, Notifications, Filter) stay mostly the same but could be connected later */}
+        <AppModal visible={notifDisclosure.isOpen} onClose={notifDisclosure.close} title="Notifications">
+          <View className="mt-4">
+            {notifications.length === 0 ? (
+              <View className="py-10 items-center">
+                <Text className="text-slate-400">No new notifications</Text>
+              </View>
+            ) : (
+              notifications.map((n) => (
+                <View key={n.id} className="flex-row items-start gap-4 mb-6 bg-slate-50 p-5 rounded-[32px] border border-slate-100">
+                  <View className="w-12 h-12 rounded-2xl bg-white items-center justify-center shadow-sm">
+                    {n.type === 'booking' ? <Calendar size={22} color="#4C6FFF" /> : <Ticket size={22} color="#F59E0B" />}
+                  </View>
+                  <View className="flex-1">
+                    <View className="flex-row justify-between items-center mb-1">
+                      <Text weight="bold" className="text-slate-900">{n.title}</Text>
+                      {!n.read && <View className="w-2 h-2 bg-primary rounded-full" />}
+                    </View>
+                    <Text className="text-slate-500 text-sm leading-5">{n.message}</Text>
+                  </View>
+                </View>
+              ))
+            )}
+            <Button title="Mark all as read" variant="outline" className="rounded-full mt-4" onPress={async () => {
+              if (user?.uid) {
+                await notificationService.markAllAsRead(user.uid);
+                showToast("All notifications marked as read", "success");
+              }
+              notifDisclosure.close();
+            }} />
+          </View>
+        </AppModal>
+
+        {/* Other Modals stay the same */}
       </LinearGradient>
     </SafeAreaView>
   );
