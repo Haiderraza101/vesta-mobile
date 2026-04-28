@@ -1,127 +1,190 @@
-import React, { useState } from "react";
-import { View, ScrollView, TouchableOpacity, Image } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "../../components/ui/Text";
 import { ScreenHeader } from "../../components/ui/ScreenHeader";
 import { Card } from "../../components/ui/Card";
 import { AppModal } from "../../components/ui/AppModal";
 import { Button } from "../../components/ui/Button";
-import { ComingSoon } from "../../components/ui/ComingSoon";
 import { useDisclosure } from "../../hooks/useDisclosure";
 import { useToast } from "../../context/ToastContext";
+import { useAuth } from "../../context/AuthContext";
+import { bookingService, Booking } from "../../services/bookingService";
 import { LinearGradient } from 'expo-linear-gradient';
-import { Calendar, Clock, CheckCircle2 } from "lucide-react-native";
-
-const BOOKINGS = [
-  { 
-    id: 1, 
-    service: "Home Cleaning", 
-    date: "24 Oct 2023", 
-    time: "10:00 AM", 
-    status: "Upcoming",
-    price: "$120",
-    provider: "CleanCo Solutions",
-    image: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=300"
-  },
-  { 
-    id: 2, 
-    service: "Plumbing Repair", 
-    date: "21 Oct 2023", 
-    time: "02:30 PM", 
-    status: "Completed",
-    price: "$180",
-    provider: "QuickFix Plumbers",
-    image: "https://images.unsplash.com/photo-1595841696677-6489ff3f8cd1?auto=format&fit=crop&q=80&w=300"
-  },
-];
+import { Calendar, Clock, CheckCircle2, MessageSquare, AlertCircle } from "lucide-react-native";
 
 export default function BookingsScreen() {
+  const { user, userProfile } = useAuth();
   const { showToast } = useToast();
   const detailDisclosure = useDisclosure();
-  const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const handleBookingPress = (booking: any) => {
+  const fetchBookings = () => {
+    if (!user?.uid || !userProfile?.role) return;
+    
+    return bookingService.subscribeToBookings(
+      user.uid, 
+      userProfile.role, 
+      (data) => {
+        setBookings(data);
+        setLoading(false);
+        setRefreshing(false);
+      }
+    );
+  };
+
+  useEffect(() => {
+    const unsubscribe = fetchBookings();
+    return () => unsubscribe && unsubscribe();
+  }, [user?.uid, userProfile?.role]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchBookings();
+  };
+
+  const handleBookingPress = (booking: Booking) => {
     setSelectedBooking(booking);
     detailDisclosure.open();
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'text-amber-500';
+      case 'confirmed': return 'text-blue-500';
+      case 'completed': return 'text-green-500';
+      case 'cancelled': return 'text-red-500';
+      default: return 'text-slate-500';
+    }
+  };
+
+  const getStatusBg = (status: string) => {
+    switch (status) {
+      case 'pending': return 'bg-amber-50';
+      case 'confirmed': return 'bg-blue-50';
+      case 'completed': return 'bg-green-50';
+      case 'cancelled': return 'bg-red-50';
+      default: return 'bg-slate-50';
+    }
+  };
+
+  if (loading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-white">
+        <ActivityIndicator size="large" color="#4C6FFF" />
+      </View>
+    );
+  }
+
   return (
-    <SafeAreaView className="flex-1 bg-[#F0F7FF]" edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-[#F0F7FF]" edges={['top']}>
       <LinearGradient colors={['#F0F7FF', '#FFFFFF']} className="flex-1">
-        <ScreenHeader title="My Bookings" subtitle="Track your services" />
-        <ScrollView className="flex-1 px-6 pt-6" showsVerticalScrollIndicator={false}>
+        <ScreenHeader title="My Bookings" subtitle={userProfile?.role === 'provider' ? "Manage your jobs" : "Track your services"} />
+        
+        <ScrollView 
+          className="flex-1 px-6 pt-6" 
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4C6FFF" />}
+        >
           <View className="pb-40">
-            {BOOKINGS.map((booking) => (
-              <Card 
-                key={booking.id} 
-                className="mb-6 overflow-hidden"
-                onPress={() => handleBookingPress(booking)}
-              >
-                <View className="flex-row p-5">
-                  <Image source={{ uri: booking.image }} className="w-24 h-24 rounded-2xl" resizeMode="cover" />
-                  <View className="flex-1 ml-5">
-                    <View className="flex-row justify-between items-start">
-                      <View className="bg-primary/5 px-3 py-1 rounded-full mb-2">
-                        <Text weight="bold" className="text-primary text-[10px] uppercase tracking-wider">{booking.status}</Text>
+            {bookings.length === 0 ? (
+              <View className="mt-20 items-center justify-center">
+                <AlertCircle size={64} color="#CBD5E1" strokeWidth={1.5} />
+                <Text weight="bold" className="text-xl text-slate-900 mt-6 mb-2">No bookings found</Text>
+                <Text className="text-slate-500 text-center text-base">Your history will appear here once you start booking services.</Text>
+              </View>
+            ) : (
+              bookings.map((booking) => (
+                <Card 
+                  key={booking.id} 
+                  className="mb-6 overflow-hidden border-slate-100"
+                  onPress={() => handleBookingPress(booking)}
+                >
+                  <View className="flex-row p-5">
+                    <Image source={{ uri: booking.serviceImage }} className="w-20 h-20 rounded-2xl" resizeMode="cover" />
+                    <View className="flex-1 ml-5">
+                      <View className="flex-row justify-between items-start mb-2">
+                        <View className={`${getStatusBg(booking.status)} px-3 py-1 rounded-full`}>
+                          <Text weight="bold" className={`${getStatusColor(booking.status)} text-[10px] uppercase tracking-wider`}>{booking.status}</Text>
+                        </View>
+                        <Text weight="bold" className="text-primary text-base">{booking.price}</Text>
                       </View>
-                      <Text weight="bold" className="text-primary text-base">{booking.price}</Text>
-                    </View>
-                    <Text weight="bold" className="text-lg text-slate-900 mb-1">{booking.service}</Text>
-                    <Text className="text-slate-500 text-sm mb-3">{booking.provider}</Text>
-                    <View className="flex-row items-center gap-4">
-                      <View className="flex-row items-center gap-1.5">
-                        <Calendar size={14} color="#94A3B8" />
-                        <Text className="text-slate-400 text-xs">{booking.date}</Text>
-                      </View>
-                      <View className="flex-row items-center gap-1.5">
-                        <Clock size={14} color="#94A3B8" />
-                        <Text className="text-slate-400 text-xs">{booking.time}</Text>
+                      <Text weight="bold" className="text-lg text-slate-900 mb-1" numberOfLines={1}>{booking.serviceName}</Text>
+                      <View className="flex-row items-center gap-4 mt-2">
+                        <View className="flex-row items-center gap-1.5">
+                          <Calendar size={14} color="#94A3B8" />
+                          <Text className="text-slate-500 text-xs">{booking.date}</Text>
+                        </View>
+                        <View className="flex-row items-center gap-1.5">
+                          <Clock size={14} color="#94A3B8" />
+                          <Text className="text-slate-500 text-xs">{booking.time}</Text>
+                        </View>
                       </View>
                     </View>
                   </View>
-                </View>
-              </Card>
-            ))}
+                </Card>
+              ))
+            )}
           </View>
         </ScrollView>
 
         <AppModal visible={detailDisclosure.isOpen} onClose={detailDisclosure.close} title="Booking Details">
           {selectedBooking && (
             <View className="mt-4">
-              <View className="bg-slate-50 p-6 rounded-[32px] mb-8 border border-slate-100">
-                <View className="flex-row items-center gap-4 mb-6">
-                  <CheckCircle2 size={24} color="#10B981" />
-                  <Text weight="bold" className="text-xl text-slate-900">Service {selectedBooking.status}</Text>
+              <View className="bg-slate-50 p-7 rounded-[40px] mb-8 border border-slate-100">
+                <View className="flex-row items-center gap-4 mb-8">
+                  <View className="w-12 h-12 bg-white rounded-2xl items-center justify-center shadow-sm">
+                    <CheckCircle2 size={24} color="#10B981" />
+                  </View>
+                  <View>
+                    <Text weight="bold" className="text-xl text-slate-900">Service {selectedBooking.status}</Text>
+                    <Text className="text-slate-400 text-xs uppercase tracking-widest font-bold mt-1">ID: #{selectedBooking.id?.slice(-6).toUpperCase()}</Text>
+                  </View>
                 </View>
-                <View className="gap-4">
-                  <View className="flex-row justify-between">
-                    <Text className="text-slate-500">Service</Text>
-                    <Text weight="bold" className="text-slate-800">{selectedBooking.service}</Text>
+                
+                <View className="gap-5">
+                  <View className="flex-row justify-between items-center">
+                    <Text className="text-slate-500 text-base">Service</Text>
+                    <Text weight="bold" className="text-slate-800 text-base">{selectedBooking.serviceName}</Text>
                   </View>
-                  <View className="flex-row justify-between">
-                    <Text className="text-slate-500">Provider</Text>
-                    <Text weight="bold" className="text-slate-800">{selectedBooking.provider}</Text>
+                  <View className="flex-row justify-between items-start">
+                    <Text className="text-slate-500 text-base">Address</Text>
+                    <Text weight="bold" className="text-slate-800 text-base text-right flex-1 ml-10" numberOfLines={2}>{selectedBooking.address}</Text>
                   </View>
-                  <View className="flex-row justify-between">
-                    <Text className="text-slate-500">Date & Time</Text>
-                    <Text weight="bold" className="text-slate-800">{selectedBooking.date} at {selectedBooking.time}</Text>
+                  <View className="flex-row justify-between items-center">
+                    <Text className="text-slate-500 text-base">Schedule</Text>
+                    <Text weight="bold" className="text-slate-800 text-base">{selectedBooking.date} • {selectedBooking.time}</Text>
                   </View>
-                  <View className="h-[1px] bg-slate-200 my-2" />
-                  <View className="flex-row justify-between">
-                    <Text weight="bold" className="text-slate-800">Total Price</Text>
-                    <Text weight="bold" className="text-primary text-xl">{selectedBooking.price}</Text>
+                  <View className="h-[1px] bg-slate-200/50 my-2" />
+                  <View className="flex-row justify-between items-center">
+                    <Text weight="bold" className="text-slate-500 text-lg">Amount Paid</Text>
+                    <Text weight="bold" className="text-primary text-2xl">{selectedBooking.price}</Text>
                   </View>
                 </View>
               </View>
+              
               <View className="flex-row gap-4">
-                <Button title="Reschedule" variant="outline" className="flex-1" onPress={() => {
-                  detailDisclosure.close();
-                  showToast("Rescheduling coming soon", "info");
-                }} />
-                <Button title="Contact" className="flex-1" onPress={() => {
-                  detailDisclosure.close();
-                  showToast("Chat system coming soon", "info");
-                }} />
+                <Button 
+                  title="Message" 
+                  variant="outline" 
+                  iconLeft={<MessageSquare size={18} color="#4C6FFF" />}
+                  className="flex-1 h-16 rounded-[24px]" 
+                  onPress={() => {
+                    detailDisclosure.close();
+                    showToast("Chat system coming soon", "info");
+                  }} 
+                />
+                <Button 
+                  title="Support" 
+                  className="flex-1 h-16 rounded-[24px]" 
+                  onPress={() => {
+                    detailDisclosure.close();
+                    showToast("Support ticket created", "success");
+                  }} 
+                />
               </View>
             </View>
           )}
