@@ -22,18 +22,13 @@ export default function AccountScreen() {
   const { showToast } = useToast();
   const editDisclosure = useDisclosure();
   const logoutDisclosure = useDisclosure();
-  const settingDisclosure = useDisclosure();
   
-  const [selectedSetting, setSelectedSetting] = useState<string | null>(null);
   const [name, setName] = useState(userProfile?.fullName || "");
   const [updating, setUpdating] = useState(false);
 
   const MENU_ITEMS = [
-    { id: 1, name: "Profile Settings", icon: User },
-    { id: 2, name: "Payment Methods", icon: CreditCard },
-    { id: 3, name: "Notifications", icon: Bell },
-    { id: 4, name: "Privacy & Security", icon: Shield },
-    { id: 5, name: "Help Center", icon: HelpCircle },
+    { id: 1, name: "Profile Settings", icon: User, action: editDisclosure.open },
+    { id: 2, name: "Sign Out", icon: LogOut, action: logoutDisclosure.open },
   ];
 
   const handleUpdateProfile = async () => {
@@ -69,11 +64,12 @@ export default function AccountScreen() {
         <ScrollView className="flex-1 px-6 pt-6" showsVerticalScrollIndicator={false}>
           <Card className="p-7 mb-10 flex-row items-center gap-7 bg-white border-white shadow-xl shadow-slate-200">
             <View className="relative">
-              <View className="w-[88px] h-[88px] rounded-[32px] overflow-hidden border-4 border-slate-50 shadow-sm">
-                <Image 
-                  source={{ uri: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=300&auto=format&fit=crop" }} 
-                  className="w-full h-full"
-                />
+              <View className="w-[88px] h-[88px] rounded-[32px] overflow-hidden border-4 border-slate-50 shadow-sm bg-primary/10 items-center justify-center">
+                {userProfile?.avatar ? (
+                  <Image source={{ uri: userProfile.avatar }} className="w-full h-full" />
+                ) : (
+                  <Text weight="bold" className="text-3xl text-primary">{userProfile?.fullName?.charAt(0) || 'U'}</Text>
+                )}
               </View>
               <TouchableOpacity className="absolute bottom-[-4] right-[-4] w-10 h-10 bg-primary rounded-2xl items-center justify-center border-4 border-white shadow-md">
                 <Camera size={16} color="white" strokeWidth={2.5} />
@@ -102,10 +98,7 @@ export default function AccountScreen() {
                   key={item.id}
                   className={`flex-row items-center justify-between p-6 ${index !== MENU_ITEMS.length - 1 ? 'border-b border-slate-50' : ''}`}
                   activeOpacity={0.7}
-                  onPress={() => {
-                    setSelectedSetting(item.name);
-                    settingDisclosure.open();
-                  }}
+                  onPress={item.action}
                 >
                   <View className="flex-row items-center gap-5">
                     <View className="w-12 h-12 bg-slate-50 rounded-2xl items-center justify-center border border-slate-100">
@@ -168,9 +161,6 @@ export default function AccountScreen() {
           </View>
         </AppModal>
 
-        <AppModal visible={settingDisclosure.isOpen} onClose={settingDisclosure.close} title={selectedSetting || ""}>
-          <ComingSoon title={selectedSetting || ""} onBack={settingDisclosure.close} />
-        </AppModal>
       </LinearGradient>
     </SafeAreaView>
   );

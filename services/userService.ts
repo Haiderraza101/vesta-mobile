@@ -16,6 +16,7 @@ export interface UserProfile {
   role: UserRole;
   createdAt: any;
   phoneNumber?: string;
+  avatar?: string;
 }
 
 export const userService = {

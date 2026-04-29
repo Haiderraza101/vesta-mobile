@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, ScrollView, TouchableOpacity, Image, StatusBar, Dimensions, ActivityIndicator, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { Text } from "../../components/ui/Text";
 import { ScreenHeader } from "../../components/ui/ScreenHeader";
 import { SectionHeader } from "../../components/ui/SectionHeader";
@@ -23,10 +23,9 @@ const BANNER_WIDTH = SCREEN_WIDTH * 0.85;
 
 export default function HomeDashboard() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ category?: string }>();
   const { user, userProfile } = useAuth();
   const { showToast } = useToast();
-  const filterDisclosure = useDisclosure();
-  const searchDisclosure = useDisclosure();
   const notifDisclosure = useDisclosure();
   
   const [selectedService, setSelectedService] = useState<Service | null>(null);
@@ -77,6 +76,12 @@ export default function HomeDashboard() {
     };
   }, [isProvider, user?.uid]);
 
+  useEffect(() => {
+    if (params.category) {
+      setActiveCategory(params.category);
+    }
+  }, [params.category]);
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchData();
@@ -92,9 +97,12 @@ export default function HomeDashboard() {
     }
   };
 
-  const filteredServices = activeCategory === "All" 
-    ? popularServices 
-    : popularServices.filter(s => s.category === activeCategory);
+  const filteredServices = popularServices.filter(s => {
+    const matchesCategory = activeCategory === "All" || s.category === activeCategory;
+    const matchesSearch = s.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         s.description.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   if (loading) {
     return (
@@ -128,22 +136,16 @@ export default function HomeDashboard() {
                 </Text>
               </View>
 
-              <View className="px-6 flex-row items-center gap-3 mb-8">
-                <TouchableOpacity 
-                  activeOpacity={0.9}
-                  onPress={searchDisclosure.open}
-                  className="flex-1 flex-row items-center bg-white rounded-2xl px-5 h-[56px] shadow-sm border border-slate-100"
-                >
+              <View className="px-6 flex-row items-center mb-8">
+                <View className="flex-1 flex-row items-center bg-white rounded-2xl px-5 h-[56px] shadow-sm border border-slate-100">
                   <Search size={20} color="#94A3B8" />
-                  <Text className="text-slate-400 ml-3 flex-1 text-[15px]">Search Service..</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  activeOpacity={0.8}
-                  onPress={filterDisclosure.open}
-                  className="w-[56px] h-[56px] items-center justify-center rounded-2xl bg-white shadow-sm border border-slate-100"
-                >
-                  <SlidersHorizontal size={20} color="#1E293B" />
-                </TouchableOpacity>
+                  <Input 
+                    placeholder="Search Service.." 
+                    className="flex-1 mb-0 border-0 h-[56px]"
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                  />
+                </View>
               </View>
 
               <View className="px-6 mb-10">
@@ -213,16 +215,18 @@ export default function HomeDashboard() {
               <View className="flex-row gap-4 mb-10">
                 <View className="flex-1 bg-white p-6 rounded-[32px] border border-slate-50 shadow-sm">
                   <Text className="text-slate-400 text-[11px] uppercase tracking-widest font-bold mb-2">Earnings</Text>
-                  <Text weight="bold" className="text-2xl text-slate-900">$2.4k</Text>
+                  <Text weight="bold" className="text-2xl text-slate-900">
+                    ${incomingBookings.reduce((acc, b) => acc + (b.status === 'completed' ? parseInt(b.price.replace('$', '')) : 0), 0)}
+                  </Text>
                 </View>
                 <View className="flex-1 bg-white p-6 rounded-[32px] border border-slate-50 shadow-sm">
                   <Text className="text-slate-400 text-[11px] uppercase tracking-widest font-bold mb-2">Jobs</Text>
-                  <Text weight="bold" className="text-2xl text-slate-900">48</Text>
+                  <Text weight="bold" className="text-2xl text-slate-900">{incomingBookings.length}</Text>
                 </View>
                 <View className="flex-1 bg-white p-6 rounded-[32px] border border-slate-50 shadow-sm">
                   <Text className="text-slate-400 text-[11px] uppercase tracking-widest font-bold mb-2">Rating</Text>
                   <View className="flex-row items-center gap-1">
-                    <Text weight="bold" className="text-2xl text-slate-900">4.9</Text>
+                    <Text weight="bold" className="text-2xl text-slate-900">5.0</Text>
                     <Star size={14} color="#F59E0B" fill="#F59E0B" />
                   </View>
                 </View>

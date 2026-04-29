@@ -33,7 +33,7 @@ export function Button({
     outline: "bg-transparent border-[1.5px] border-slate-200",
     ghost: "bg-transparent",
     destructive: "bg-rose-500",
-    white: "bg-white",
+    white: "bg-white shadow-sm shadow-slate-200",
   };
 
   const sizes = {
@@ -63,7 +63,6 @@ export function Button({
       onPress={onPress}
       disabled={disabled || loading}
       className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className} ${disabled ? 'opacity-40' : ''}`}
-      style={variant === 'white' ? { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 } : {}}
     >
       {loading ? (
         <ActivityIndicator color={variant === 'outline' || variant === 'white' ? '#4C6FFF' : 'white'} />

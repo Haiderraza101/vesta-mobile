@@ -2,6 +2,7 @@ import React from 'react';
 import { View, TouchableOpacity, Image } from 'react-native';
 import { Text } from './Text';
 import { Bell, MapPin } from 'lucide-react-native';
+import { useAuth } from '../../context/AuthContext';
 
 interface ScreenHeaderProps {
   title: string;
@@ -20,15 +21,18 @@ export function ScreenHeader({
   hasUnread = true,
   onNotificationPress 
 }: ScreenHeaderProps) {
+  const { userProfile } = useAuth();
+
   return (
     <View className="px-6 py-4 flex-row items-center justify-between">
       <View className="flex-row items-center gap-3.5">
         {showProfile && (
-          <View className="w-[52px] h-[52px] rounded-2xl overflow-hidden border-2 border-white shadow-xl shadow-slate-200">
-            <Image 
-              source={{ uri: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=200&auto=format&fit=crop" }} 
-              className="w-full h-full"
-            />
+          <View className="w-[52px] h-[52px] rounded-2xl overflow-hidden border-2 border-white shadow-xl shadow-slate-200 bg-primary/10 items-center justify-center">
+            {userProfile?.avatar ? (
+              <Image source={{ uri: userProfile.avatar }} className="w-full h-full" />
+            ) : (
+              <Text weight="bold" className="text-xl text-primary">{userProfile?.fullName?.charAt(0) || 'U'}</Text>
+            )}
           </View>
         )}
         <View>

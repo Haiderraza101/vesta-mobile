@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import { Text } from "../../components/ui/Text";
 import { ScreenHeader } from "../../components/ui/ScreenHeader";
 import { Card } from "../../components/ui/Card";
@@ -14,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Calendar, Clock, CheckCircle2, MessageSquare, AlertCircle } from "lucide-react-native";
 
 export default function BookingsScreen() {
+  const router = useRouter();
   const { user, userProfile } = useAuth();
   const { showToast } = useToast();
   const detailDisclosure = useDisclosure();
@@ -91,10 +93,19 @@ export default function BookingsScreen() {
         >
           <View className="pb-40">
             {bookings.length === 0 ? (
-              <View className="mt-20 items-center justify-center">
-                <AlertCircle size={64} color="#CBD5E1" strokeWidth={1.5} />
-                <Text weight="bold" className="text-xl text-slate-900 mt-6 mb-2">No bookings found</Text>
-                <Text className="text-slate-500 text-center text-base">Your history will appear here once you start booking services.</Text>
+              <View className="mt-20 items-center justify-center bg-white p-12 rounded-[40px] border border-slate-50 shadow-sm">
+                <View className="w-24 h-24 bg-slate-50 rounded-full items-center justify-center mb-8">
+                  <Calendar size={40} color="#CBD5E1" strokeWidth={1.5} />
+                </View>
+                <Text weight="bold" className="text-2xl text-slate-900 mb-2">No bookings yet</Text>
+                <Text className="text-slate-500 text-center text-base leading-7 mb-10 px-4">
+                  Explore our wide range of professional services and make your first booking today.
+                </Text>
+                <Button 
+                  title="Browse Services" 
+                  className="w-full rounded-full h-16 shadow-lg shadow-primary/20"
+                  onPress={() => router.push('/(tabs)')}
+                />
               </View>
             ) : (
               bookings.map((booking) => (

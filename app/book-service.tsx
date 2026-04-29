@@ -3,6 +3,7 @@ import { View, SafeAreaView, ScrollView, TouchableOpacity, ActivityIndicator } f
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Text } from "../components/ui/Text";
 import { Button } from "../components/ui/Button";
+import { Input } from "../components/ui/Input";
 import { useToast } from "../context/ToastContext";
 import { useAuth } from "../context/AuthContext";
 import { bookingService } from "../services/bookingService";
@@ -10,13 +11,16 @@ import { cn } from "../utils/utils";
 import { ArrowLeft, Calendar as CalendarIcon, Clock, MapPin } from "lucide-react-native";
 
 const TIME_SLOTS = ["09:00 AM", "10:00 AM", "11:00 AM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM"];
-const DATES = [
-  { day: "Sat", date: "02", month: "May" },
-  { day: "Sun", date: "03", month: "May" },
-  { day: "Mon", date: "04", month: "May" },
-  { day: "Tue", date: "05", month: "May" },
-  { day: "Wed", date: "06", month: "May" },
-];
+const DATES = Array.from({ length: 7 }, (_, i) => {
+  const d = new Date();
+  d.setDate(d.getDate() + i);
+  return {
+    day: d.toLocaleDateString('en-US', { weekday: 'short' }),
+    date: d.toLocaleDateString('en-US', { day: '2-digit' }),
+    month: d.toLocaleDateString('en-US', { month: 'short' }),
+    full: d.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })
+  };
+});
 
 export default function BookServiceScreen() {
   const router = useRouter();
@@ -24,9 +28,9 @@ export default function BookServiceScreen() {
   const { user } = useAuth();
   const { showToast } = useToast();
   
-  const [selectedDate, setSelectedDate] = useState("02");
+  const [selectedDate, setSelectedDate] = useState(DATES[0].date);
   const [selectedTime, setSelectedTime] = useState("10:00 AM");
-  const [address, setAddress] = useState("Street 12, Blue Area, Islamabad");
+  const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
 
   const { serviceId, serviceName, servicePrice, serviceImage, providerId } = params;
@@ -127,15 +131,13 @@ export default function BookServiceScreen() {
               <MapPin size={18} color="#4C6FFF" strokeWidth={2.5} />
               <Text weight="bold" className="text-lg text-slate-800">Service Location</Text>
             </View>
-            <TouchableOpacity className="bg-slate-50 p-6 rounded-[32px] border border-slate-100 flex-row items-center gap-4">
-              <View className="w-12 h-12 bg-white rounded-2xl items-center justify-center shadow-sm">
-                <MapPin size={20} color="#64748B" />
-              </View>
-              <View className="flex-1">
-                <Text weight="bold" className="text-slate-900">Home Address</Text>
-                <Text className="text-slate-500 mt-0.5">{address}</Text>
-              </View>
-            </TouchableOpacity>
+            <Input 
+              placeholder="Enter your full address" 
+              value={address}
+              onChangeText={setAddress}
+              leftIcon={<MapPin size={20} color="#94A3B8" />}
+              className="h-16"
+            />
           </View>
         </ScrollView>
 

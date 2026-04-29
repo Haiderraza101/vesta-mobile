@@ -35,10 +35,9 @@ export function Input({
         <Text weight="bold" className="text-slate-800 mb-2.5 ml-1 text-[13px] uppercase tracking-widest">{label}</Text>
       )}
       <View 
-        className={`flex-row items-center bg-white rounded-[24px] px-5 h-[64px] border transition-all ${
-          isFocused ? 'border-[#4C6FFF] shadow-lg shadow-primary/10' : 'border-slate-100'
+        className={`flex-row items-center bg-white rounded-[24px] px-5 h-[64px] border ${
+          isFocused ? 'border-primary' : 'border-slate-100'
         }`}
-        style={{ shadowColor: isFocused ? '#4C6FFF' : '#000', shadowOpacity: isFocused ? 0.1 : 0.02, shadowRadius: 15, elevation: isFocused ? 4 : 1 }}
       >
         {leftIcon && <View className="mr-3.5 opacity-80">{leftIcon}</View>}
         <TextInput

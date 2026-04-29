@@ -1,36 +1,56 @@
-import React, { useState } from "react";
-import { View, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, StatusBar } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, StatusBar, Animated } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter, Link } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { Text } from "../../components/ui/Text";
 import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
-import { Selector } from "../../components/ui/Selector";
 import { useToast } from "../../context/ToastContext";
-import { ArrowLeft, User, Mail, Lock, Phone } from "lucide-react-native";
+import { ArrowLeft, Mail, Lock, CheckCircle2 } from "lucide-react-native";
 import { authService } from "../../services/authService";
 import { userService, UserRole } from "../../services/userService";
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function SignUp() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ role: UserRole }>();
   const { showToast } = useToast();
-  const [loading, setLoading] = useState(false);
   
-  const [fullName, setFullName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [phone, setPhone] = useState("");
-  const [role, setRole] = useState<UserRole>("customer");
+  
+  const successAnim = new Animated.Value(0);
+  const scaleAnim = new Animated.Value(0.8);
 
-  const roleOptions = [
-    { label: "I want to hire services (Customer)", value: "customer" },
-    { label: "I want to provide services (Provider)", value: "provider" },
-  ];
+  useEffect(() => {
+    if (success) {
+      Animated.parallel([
+        Animated.timing(successAnim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 20,
+          friction: 5,
+          useNativeDriver: true,
+        })
+      ]).start();
+
+      const timer = setTimeout(() => {
+        router.replace("/(tabs)");
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
 
   const handleSignUp = async () => {
-    if (!fullName || !email || !password || !confirmPassword) {
-      showToast("Please fill all required fields", "error");
+    if (!email || !password || !confirmPassword) {
+      showToast("Please fill all fields", "error");
       return;
     }
 
@@ -40,7 +60,7 @@ export default function SignUp() {
     }
 
     if (password.length < 6) {
-      showToast("Password should be at least 6 characters", "error");
+      showToast("Password must be at least 6 characters", "error");
       return;
     }
 
@@ -48,21 +68,44 @@ export default function SignUp() {
     try {
       const user = await authService.signUp(email, password);
       
+      // Default name from email
+      const defaultName = email.split('@')[0];
+      
       await userService.createUserProfile(user.uid, {
-        fullName,
+        fullName: defaultName.charAt(0).toUpperCase() + defaultName.slice(1),
         email,
-        role,
-        phoneNumber: phone,
+        role: params.role || 'customer',
       });
 
-      showToast("Account created successfully!", "success");
-      router.replace("/(tabs)");
+      setSuccess(true);
     } catch (error: any) {
       showToast(error.message || "Sign up failed", "error");
-    } finally {
       setLoading(false);
     }
   };
+
+  if (success) {
+    return (
+      <View className="flex-1 bg-white items-center justify-center">
+        <StatusBar barStyle="dark-content" />
+        <Animated.View 
+          style={{ 
+            opacity: successAnim,
+            transform: [{ scale: scaleAnim }]
+          }}
+          className="items-center"
+        >
+          <View className="w-32 h-32 bg-green-50 rounded-full items-center justify-center mb-8 border border-green-100">
+            <CheckCircle2 size={72} color="#10B981" strokeWidth={2} />
+          </View>
+          <Text weight="bold" className="text-3xl text-slate-900 mb-2">Account Created!</Text>
+          <Text className="text-slate-500 text-center px-12 leading-6 text-lg">
+            Welcome to Vesta. Your journey begins now.
+          </Text>
+        </Animated.View>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
@@ -77,25 +120,20 @@ export default function SignUp() {
           className="px-8"
         >
           <TouchableOpacity 
-            onPress={() => router.canGoBack() ? router.back() : router.replace("/onboarding")}
-            className="mt-4 mb-8 h-12 w-12 items-center justify-center border border-slate-100 rounded-2xl shadow-sm bg-white"
+            onPress={() => router.back()}
+            className="mt-4 mb-10 h-12 w-12 items-center justify-center border border-slate-100 rounded-2xl shadow-sm bg-white"
           >
             <ArrowLeft size={22} color="#1E293B" strokeWidth={2.5} />
           </TouchableOpacity>
 
-          <View className="mb-8">
-            <Text weight="bold" className="text-4xl mb-3 text-slate-900">Create Account</Text>
-            <Text className="text-slate-500 text-lg leading-7">Join Vesta today and simplify your home maintenance journey.</Text>
+          <View className="mb-12">
+            <Text weight="bold" className="text-4xl mb-4 text-slate-900">Sign Up</Text>
+            <Text className="text-slate-500 text-lg leading-7">
+              Register as a <Text weight="bold" className="text-primary">{params.role || 'Member'}</Text> to join the marketplace.
+            </Text>
           </View>
 
-          <View className="gap-5">
-            <Input 
-              label="Full Name"
-              placeholder="John Doe"
-              value={fullName}
-              onChangeText={setFullName}
-              leftIcon={<User size={20} color="#94A3B8" />}
-            />
+          <View className="gap-6">
             <Input 
               label="Email Address"
               placeholder="name@example.com"
@@ -106,16 +144,8 @@ export default function SignUp() {
               leftIcon={<Mail size={20} color="#94A3B8" />}
             />
             <Input 
-              label="Phone Number (Optional)"
-              placeholder="+1 234 567 890"
-              keyboardType="phone-pad"
-              value={phone}
-              onChangeText={setPhone}
-              leftIcon={<Phone size={20} color="#94A3B8" />}
-            />
-            <Input 
               label="Password"
-              placeholder="Create a strong password"
+              placeholder="Create a password"
               secureTextEntry
               value={password}
               onChangeText={setPassword}
@@ -123,28 +153,15 @@ export default function SignUp() {
             />
             <Input 
               label="Confirm Password"
-              placeholder="Repeat your password"
+              placeholder="Confirm your password"
               secureTextEntry
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               leftIcon={<Lock size={20} color="#94A3B8" />}
             />
-            
-            <Selector 
-              label="Register As"
-              options={roleOptions}
-              value={role}
-              onSelect={(val) => setRole(val as UserRole)}
-            />
-
-            <View className="mt-2">
-              <Text variant="small" className="text-slate-400 leading-5">
-                By creating an account, you agree to our <Text weight="bold" className="text-primary">Terms</Text> and <Text weight="bold" className="text-primary">Privacy Policy</Text>.
-              </Text>
-            </View>
           </View>
 
-          <View className="mt-10 mb-8">
+          <View className="mt-auto py-10">
             <Button 
               title="Create Account" 
               onPress={handleSignUp} 
@@ -155,11 +172,9 @@ export default function SignUp() {
             
             <View className="flex-row items-center justify-center mt-8 gap-2">
               <Text className="text-slate-500">Already have an account?</Text>
-              <Link href="/(auth)/login" asChild>
-                <TouchableOpacity>
-                  <Text weight="bold" className="text-primary uppercase tracking-widest text-sm">Log In</Text>
-                </TouchableOpacity>
-              </Link>
+              <TouchableOpacity onPress={() => router.replace("/(auth)/login")}>
+                <Text weight="bold" className="text-primary uppercase tracking-widest text-sm">Log In</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </ScrollView>

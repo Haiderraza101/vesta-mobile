@@ -49,8 +49,7 @@ export const bookingService = {
     try {
       const q = query(
         collection(db, 'bookings'), 
-        where('customerId', '==', customerId),
-        orderBy('createdAt', 'desc')
+        where('customerId', '==', customerId)
       );
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
@@ -64,8 +63,7 @@ export const bookingService = {
     try {
       const q = query(
         collection(db, 'bookings'), 
-        where('providerId', '==', providerId),
-        orderBy('createdAt', 'desc')
+        where('providerId', '==', providerId)
       );
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
@@ -89,8 +87,7 @@ export const bookingService = {
     const field = role === 'customer' ? 'customerId' : 'providerId';
     const q = query(
       collection(db, 'bookings'), 
-      where(field, '==', userId),
-      orderBy('createdAt', 'desc')
+      where(field, '==', userId)
     );
     
     return onSnapshot(q, (snapshot) => {

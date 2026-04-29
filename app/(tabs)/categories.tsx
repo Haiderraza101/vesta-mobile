@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import { Text } from "../../components/ui/Text";
 import { ScreenHeader } from "../../components/ui/ScreenHeader";
 import { AppModal } from "../../components/ui/AppModal";
@@ -12,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowRight, Sparkles, LayoutGrid } from "lucide-react-native";
 
 export default function CategoriesScreen() {
+  const router = useRouter();
   const { showToast } = useToast();
   const categoryDisclosure = useDisclosure();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -108,7 +110,10 @@ export default function CategoriesScreen() {
                 size="lg"
                 onPress={() => {
                   categoryDisclosure.close();
-                  showToast(`Searching for ${selectedCat.name} experts...`, "success");
+                  router.push({
+                    pathname: "/(tabs)",
+                    params: { category: selectedCat.name }
+                  });
                 }} 
                 className="rounded-full h-16 shadow-lg shadow-primary/30"
                 iconRight={<ArrowRight size={20} color="white" strokeWidth={2.5} />} 

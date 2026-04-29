@@ -38,8 +38,7 @@ export const notificationService = {
   subscribeToNotifications: (userId: string, callback: (notifications: Notification[]) => void) => {
     const q = query(
       collection(db, 'notifications'),
-      where('userId', '==', userId),
-      orderBy('createdAt', 'desc')
+      where('userId', '==', userId)
     );
 
     return onSnapshot(q, (snapshot) => {
