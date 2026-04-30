@@ -12,6 +12,7 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { UserRole } from './userService';
 
 export type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
 
@@ -83,12 +84,16 @@ export const bookingService = {
     }
   },
 
-  subscribeToBookings: (userId: string, role: 'customer' | 'provider', callback: (bookings: Booking[]) => void) => {
-    const field = role === 'customer' ? 'customerId' : 'providerId';
-    const q = query(
-      collection(db, 'bookings'), 
-      where(field, '==', userId)
-    );
+  subscribeToBookings: (userId: string, role: UserRole, callback: (bookings: Booking[]) => void) => {
+    let q;
+    if (role === 'admin') {
+      q = query(collection(db, 'bookings'));
+    } else {
+      q = query(
+        collection(db, 'bookings'),
+        where(role === 'provider' ? 'providerId' : 'customerId', '==', userId)
+      );
+    }
     
     return onSnapshot(q, (snapshot) => {
       const bookings = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));

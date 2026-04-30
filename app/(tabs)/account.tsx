@@ -28,6 +28,7 @@ export default function AccountScreen() {
 
   const MENU_ITEMS = [
     { id: 1, name: "Profile Settings", icon: User, action: editDisclosure.open },
+    ...(userProfile?.role === 'admin' ? [{ id: 5, name: "Admin Dashboard", icon: Shield, action: () => router.push('/admin') }] : []),
     { id: 2, name: "Sign Out", icon: LogOut, action: logoutDisclosure.open },
   ];
 

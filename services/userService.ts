@@ -2,12 +2,14 @@ import {
   doc, 
   setDoc, 
   getDoc, 
+  getDocs,
+  collection,
   updateDoc, 
   serverTimestamp 
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
-export type UserRole = 'customer' | 'provider';
+export type UserRole = 'customer' | 'provider' | 'admin';
 
 export interface UserProfile {
   uid: string;
@@ -56,4 +58,24 @@ export const userService = {
       throw error;
     }
   },
+
+  getAllUsers: async (): Promise<UserProfile[]> => {
+    try {
+      const snapshot = await getDocs(collection(db, 'users'));
+      return snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
+    } catch (error) {
+      console.error("Error getting all users:", error);
+      throw error;
+    }
+  },
+
+  updateUserRole: async (uid: string, role: UserRole) => {
+    try {
+      const docRef = doc(db, 'users', uid);
+      await updateDoc(docRef, { role });
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      throw error;
+    }
+  }
 };

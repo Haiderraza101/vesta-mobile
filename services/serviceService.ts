@@ -1,10 +1,13 @@
-import { 
-  collection, 
-  getDocs, 
-  query, 
-  where, 
+import {
+  collection,
+  getDocs,
+  query,
+  where,
   orderBy,
-  limit
+  limit,
+  addDoc,
+  deleteDoc,
+  doc
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
@@ -17,7 +20,7 @@ export interface Category {
 export interface Service {
   id: string;
   title: string;
-  price: string;
+  price: number;
   rating: string;
   reviews: string;
   description: string;
@@ -55,6 +58,42 @@ export const serviceService = {
       return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Service));
     } catch (error) {
       console.error("Error getting services by category:", error);
+      throw error;
+    }
+  },
+
+  addCategory: async (category: Omit<Category, 'id'>) => {
+    try {
+      await addDoc(collection(db, 'categories'), category);
+    } catch (error) {
+      console.error("Error adding category:", error);
+      throw error;
+    }
+  },
+
+  addService: async (service: Omit<Service, 'id'>) => {
+    try {
+      await addDoc(collection(db, 'services'), service);
+    } catch (error) {
+      console.error("Error adding service:", error);
+      throw error;
+    }
+  },
+
+  deleteCategory: async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'categories', id));
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      throw error;
+    }
+  },
+
+  deleteService: async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'services', id));
+    } catch (error) {
+      console.error("Error deleting service:", error);
       throw error;
     }
   }
