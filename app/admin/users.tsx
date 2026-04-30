@@ -130,18 +130,23 @@ export default function UserManagement() {
                   className="bg-white p-5 rounded-[32px] border border-slate-50 shadow-sm flex-row items-center gap-5"
                 >
                   <View className={`w-14 h-14 rounded-2xl items-center justify-center ${
-                    u.role === 'admin' ? 'bg-rose-50' : u.role === 'provider' ? 'bg-primary/5' : 'bg-slate-50'
+                    u.role === 'admin' ? 'bg-primary/10' : u.role === 'provider' ? 'bg-primary/5' : 'bg-slate-50'
                   }`}>
-                    {u.role === 'admin' ? <Shield size={24} color="#F43F5E" /> : 
+                    {u.role === 'admin' ? <Shield size={24} color="#4C6FFF" /> : 
                      u.role === 'provider' ? <Briefcase size={24} color="#4C6FFF" /> : 
-                     <User size={24} color="#64748B" />}
+                     <User size={24} color="#4C6FFF" />}
                   </View>
                   <View className="flex-1">
                     <Text weight="bold" className="text-lg text-slate-900 mb-0.5">{u.fullName}</Text>
                     <View className="flex-row items-center gap-2">
-                      <Mail size={12} color="#94A3B8" />
+                      <Mail size={12} color="#4C6FFF" />
                       <Text className="text-slate-400 text-xs">{u.email}</Text>
                     </View>
+                  </View>
+                  <View className={`px-2.5 py-1 rounded-full ${
+                    u.role === 'admin' ? 'bg-primary/10' : u.role === 'provider' ? 'bg-primary/5' : 'bg-slate-100'
+                  }`}>
+                    <Text weight="bold" className="text-[10px] text-primary uppercase tracking-widest">{u.role}</Text>
                   </View>
                   <ChevronRight size={18} color="#CBD5E1" strokeWidth={3} />
                 </TouchableOpacity>
