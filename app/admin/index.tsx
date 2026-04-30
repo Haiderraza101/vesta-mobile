@@ -19,6 +19,7 @@ import {
   ChevronRight,
   Package
 } from "lucide-react-native";
+import { Price } from "../../components/ui/Price";
 import { serviceService } from "../../services/serviceService";
 import { bookingService } from "../../services/bookingService";
 import { userService } from "../../services/userService";
@@ -42,7 +43,7 @@ export default function AdminDashboard() {
         });
 
         const providers = allUsers.filter(u => u.role === 'provider').length;
-        const revenue = allBookings.reduce((acc, b) => acc + (b.status === 'completed' ? parseInt(b.price.replace('$', '')) : 0), 0);
+        const revenue = allBookings.reduce((acc, b) => acc + (b.status === 'completed' ? (typeof b.price === 'string' ? parseFloat(b.price.replace(/[^0-9.]/g, '')) : b.price) : 0), 0);
 
         setStats({
           totalUsers: allUsers.length,
@@ -74,7 +75,7 @@ export default function AdminDashboard() {
       subtitle: "Manage standard service listings", 
       icon: Briefcase, 
       route: "/admin/services",
-      color: "#8B5CF6"
+      color: "#4C6FFF"
     },
     { 
       id: 'providers', 
@@ -82,7 +83,7 @@ export default function AdminDashboard() {
       subtitle: "Manage roles and verification", 
       icon: ShieldCheck, 
       route: "/admin/users",
-      color: "#10B981"
+      color: "#4C6FFF"
     },
     { 
       id: 'bookings', 
@@ -90,7 +91,7 @@ export default function AdminDashboard() {
       subtitle: "Monitor all platform activity", 
       icon: Package, 
       route: "/(tabs)/bookings",
-      color: "#F59E0B"
+      color: "#4C6FFF"
     },
     { 
       id: 'settings', 
@@ -98,7 +99,7 @@ export default function AdminDashboard() {
       subtitle: "Global currency & configuration", 
       icon: Settings, 
       route: "/admin/settings",
-      color: "#64748B"
+      color: "#4C6FFF"
     }
   ];
 
@@ -127,22 +128,22 @@ export default function AdminDashboard() {
               <Text weight="bold" className="text-2xl text-slate-900">{stats.totalUsers}</Text>
             </View>
             <View className="bg-white p-6 rounded-[32px] border border-slate-50 shadow-sm" style={{ width: '47%' }}>
-              <View className="w-10 h-10 bg-green-50 rounded-xl items-center justify-center mb-3">
-                <TrendingUp size={20} color="#10B981" />
+              <View className="w-10 h-10 bg-primary/10 rounded-xl items-center justify-center mb-3">
+                <TrendingUp size={20} color="#4C6FFF" />
               </View>
               <Text className="text-slate-400 text-[10px] uppercase tracking-widest font-bold mb-1">Revenue</Text>
-              <Text weight="bold" className="text-2xl text-slate-900">${stats.totalRevenue}</Text>
+              <Price amount={stats.totalRevenue} className="text-2xl" />
             </View>
             <View className="bg-white p-6 rounded-[32px] border border-slate-50 shadow-sm" style={{ width: '47%' }}>
-              <View className="w-10 h-10 bg-amber-50 rounded-xl items-center justify-center mb-3">
-                <Briefcase size={20} color="#F59E0B" />
+              <View className="w-10 h-10 bg-primary/10 rounded-xl items-center justify-center mb-3">
+                <Briefcase size={20} color="#4C6FFF" />
               </View>
               <Text className="text-slate-400 text-[10px] uppercase tracking-widest font-bold mb-1">Providers</Text>
               <Text weight="bold" className="text-2xl text-slate-900">{stats.totalProviders}</Text>
             </View>
             <View className="bg-white p-6 rounded-[32px] border border-slate-50 shadow-sm" style={{ width: '47%' }}>
-              <View className="w-10 h-10 bg-rose-50 rounded-xl items-center justify-center mb-3">
-                <Package size={20} color="#F43F5E" />
+              <View className="w-10 h-10 bg-primary/10 rounded-xl items-center justify-center mb-3">
+                <Package size={20} color="#4C6FFF" />
               </View>
               <Text className="text-slate-400 text-[10px] uppercase tracking-widest font-bold mb-1">Bookings</Text>
               <Text weight="bold" className="text-2xl text-slate-900">{stats.totalBookings}</Text>
