@@ -1,39 +1,53 @@
 import React, { useState, useEffect } from "react";
-import { View, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
+import { View, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Text } from "../../components/ui/Text";
 import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 import { RoleModal } from "../../components/ui/RoleModal";
+import { LoadingState } from "../../components/ui/LoadingState";
+import { EmptyState } from "../../components/ui/EmptyState";
+import { usePagination } from "../../hooks/usePagination";
+import { useSort } from "../../hooks/useSort";
 import { useToast } from "../../context/ToastContext";
 import { userService, UserProfile, UserRole } from "../../services/userService";
-import { ArrowLeft, Search, User, Briefcase, Shield, ChevronRight, Mail, Phone, Calendar } from "lucide-react-native";
+import { ArrowLeft, Search, User, Briefcase, Shield, ChevronRight, Mail, ArrowUpDown } from "lucide-react-native";
 
 export default function UserManagement() {
   const router = useRouter();
   const { showToast } = useToast();
-  
-  const [users, setUsers] = useState<UserProfile[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [roleUpdating, setRoleUpdating] = useState(false);
 
-  const fetchUsers = async () => {
-    try {
-      const data = await userService.getAllUsers();
-      setUsers(data);
-    } catch (error) {
-      showToast("Failed to fetch users", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    data: users,
+    loading,
+    refreshing,
+    loadInitialData,
+    refresh,
+    loadMore,
+    loadingMore
+  } = usePagination<UserProfile>({
+    fetchData: (page, limit) => userService.getAllUsers(page, limit),
+    limit: 10
+  });
 
   useEffect(() => {
-    fetchUsers();
+    loadInitialData();
   }, []);
+
+  const filteredData = users.filter(u => 
+    u.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    u.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const { sortedData: filteredUsers, toggleSort, sortKey } = useSort<UserProfile>(
+    filteredData,
+    'fullName',
+    'asc'
+  );
 
   const handleRoleUpdate = async (newRole: UserRole) => {
     if (!selectedUser) return;
@@ -42,7 +56,7 @@ export default function UserManagement() {
       await userService.updateUserRole(selectedUser.uid, newRole);
       showToast("User role updated", "success");
       setSelectedUser(null);
-      fetchUsers();
+      refresh();
     } catch (error) {
       showToast("Update failed", "error");
     } finally {
@@ -50,18 +64,7 @@ export default function UserManagement() {
     }
   };
 
-  const filteredUsers = users.filter(u => 
-    u.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    u.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  if (loading) {
-    return (
-      <View className="flex-1 items-center justify-center bg-white">
-        <ActivityIndicator size="large" color="#4C6FFF" />
-      </View>
-    );
-  }
+  if (loading) return <LoadingState message="Fetching users..." />;
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
@@ -73,6 +76,7 @@ export default function UserManagement() {
         onSelect={handleRoleUpdate}
         loading={roleUpdating}
       />
+      
       <View className="flex-1 px-6 pt-4">
         <View className="flex-row items-center gap-4 mb-8">
           <TouchableOpacity onPress={() => router.back()} className="h-12 w-12 items-center justify-center border border-slate-100 rounded-2xl">
@@ -81,52 +85,70 @@ export default function UserManagement() {
           <Text weight="bold" className="text-xl text-slate-900">User Management</Text>
         </View>
 
-        <View className="flex-row items-center bg-slate-50 rounded-2xl px-5 h-[56px] mb-8 border border-slate-100">
-          <Search size={20} color="#94A3B8" />
-          <Input 
-            placeholder="Search by name or email..." 
-            className="flex-1 mb-0 border-0 h-[56px]"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
+        <View className="flex-row items-center gap-4 mb-8">
+          <View className="flex-1 flex-row items-center bg-slate-50 rounded-2xl px-5 h-[56px] border border-slate-100">
+            <Search size={20} color="#94A3B8" />
+            <Input 
+              placeholder="Search users..." 
+              className="flex-1 mb-0 border-0 h-[56px]"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+          <TouchableOpacity 
+            onPress={() => toggleSort('fullName')}
+            className="h-[56px] w-[56px] items-center justify-center bg-slate-50 rounded-2xl border border-slate-100"
+          >
+            <ArrowUpDown size={20} color={sortKey === 'fullName' ? "#4C6FFF" : "#94A3B8"} />
+          </TouchableOpacity>
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false} className="pb-20">
-          <View className="gap-4 pb-10">
-            {filteredUsers.map((u) => (
-              <TouchableOpacity 
-                key={u.uid} 
-                activeOpacity={0.7}
-                onPress={() => setSelectedUser(u)}
-                className="bg-white p-5 rounded-[32px] border border-slate-50 shadow-sm flex-row items-center gap-5"
-              >
-                <View className={`w-14 h-14 rounded-2xl items-center justify-center ${
-                  u.role === 'admin' ? 'bg-rose-50' : u.role === 'provider' ? 'bg-primary/5' : 'bg-slate-50'
-                }`}>
-                  {u.role === 'admin' ? <Shield size={24} color="#F43F5E" /> : 
-                   u.role === 'provider' ? <Briefcase size={24} color="#4C6FFF" /> : 
-                   <User size={24} color="#64748B" />}
-                </View>
-                <View className="flex-1">
-                  <Text weight="bold" className="text-lg text-slate-900 mb-0.5">{u.fullName}</Text>
-                  <View className="flex-row items-center gap-2">
-                    <Mail size={12} color="#94A3B8" />
-                    <Text className="text-slate-400 text-xs">{u.email}</Text>
+        <ScrollView 
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={refresh} colors={['#4C6FFF']} />
+          }
+          onScroll={({ nativeEvent }) => {
+            const isCloseToBottom = nativeEvent.layoutMeasurement.height + nativeEvent.contentOffset.y >= nativeEvent.contentSize.height - 50;
+            if (isCloseToBottom) loadMore();
+          }}
+          scrollEventThrottle={400}
+        >
+          {filteredUsers.length === 0 ? (
+            <EmptyState 
+              title="No users found"
+              description={searchQuery ? `We couldn't find anyone matching "${searchQuery}"` : "No users registered yet."}
+              icon={User}
+            />
+          ) : (
+            <View className="gap-4 pb-10">
+              {filteredUsers.map((u) => (
+                <TouchableOpacity 
+                  key={u.uid} 
+                  activeOpacity={0.7}
+                  onPress={() => setSelectedUser(u)}
+                  className="bg-white p-5 rounded-[32px] border border-slate-50 shadow-sm flex-row items-center gap-5"
+                >
+                  <View className={`w-14 h-14 rounded-2xl items-center justify-center ${
+                    u.role === 'admin' ? 'bg-rose-50' : u.role === 'provider' ? 'bg-primary/5' : 'bg-slate-50'
+                  }`}>
+                    {u.role === 'admin' ? <Shield size={24} color="#F43F5E" /> : 
+                     u.role === 'provider' ? <Briefcase size={24} color="#4C6FFF" /> : 
+                     <User size={24} color="#64748B" />}
                   </View>
-                  <View className="flex-row items-center mt-2">
-                    <View className={`px-2 py-0.5 rounded-full ${
-                      u.role === 'admin' ? 'bg-rose-50' : u.role === 'provider' ? 'bg-primary/5' : 'bg-slate-50'
-                    }`}>
-                      <Text weight="bold" className={`text-[10px] uppercase tracking-widest ${
-                        u.role === 'admin' ? 'text-rose-500' : u.role === 'provider' ? 'text-primary' : 'text-slate-500'
-                      }`}>{u.role}</Text>
+                  <View className="flex-1">
+                    <Text weight="bold" className="text-lg text-slate-900 mb-0.5">{u.fullName}</Text>
+                    <View className="flex-row items-center gap-2">
+                      <Mail size={12} color="#94A3B8" />
+                      <Text className="text-slate-400 text-xs">{u.email}</Text>
                     </View>
                   </View>
-                </View>
-                <ChevronRight size={18} color="#CBD5E1" strokeWidth={3} />
-              </TouchableOpacity>
-            ))}
-          </View>
+                  <ChevronRight size={18} color="#CBD5E1" strokeWidth={3} />
+                </TouchableOpacity>
+              ))}
+              {loadingMore && <ActivityIndicator size="small" color="#4C6FFF" className="py-4" />}
+            </View>
+          )}
         </ScrollView>
       </View>
     </SafeAreaView>

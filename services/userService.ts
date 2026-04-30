@@ -59,10 +59,15 @@ export const userService = {
     }
   },
 
-  getAllUsers: async (): Promise<UserProfile[]> => {
+  getAllUsers: async (page: number = 1, limit: number = 10): Promise<UserProfile[]> => {
     try {
+      // In production, we'd use Firestore limit() and startAfter()
+      // For now, we simulate the interface
       const snapshot = await getDocs(collection(db, 'users'));
-      return snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
+      const allUsers = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
+      
+      const start = (page - 1) * limit;
+      return allUsers.slice(start, start + limit);
     } catch (error) {
       console.error("Error getting all users:", error);
       throw error;
