@@ -5,6 +5,7 @@ import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, P
 import * as SplashScreen from "expo-splash-screen";
 import { ThemeProvider } from "../context/ThemeContext";
 import { ToastProvider } from "../context/ToastContext";
+import { AuthProvider } from "../context/AuthContext";
 import "../globals.css";
 
 SplashScreen.preventAutoHideAsync();
@@ -31,17 +32,19 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <ToastProvider>
-          <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
-            <Stack.Screen name="splash" />
-            <Stack.Screen name="onboarding" />
-            <Stack.Screen name="(auth)" options={{ animation: 'slide_from_bottom' }} />
-            <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
-            <Stack.Screen name="book-service" options={{ animation: 'slide_from_bottom' }} />
-          </Stack>
-        </ToastProvider>
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
+              <Stack.Screen name="splash" />
+              <Stack.Screen name="onboarding" />
+              <Stack.Screen name="(auth)" options={{ animation: 'slide_from_bottom' }} />
+              <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+              <Stack.Screen name="book-service" options={{ animation: 'slide_from_bottom' }} />
+            </Stack>
+          </ToastProvider>
+        </ThemeProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

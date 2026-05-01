@@ -4,11 +4,14 @@ import { useRouter } from "expo-router";
 import { Text } from "../components/ui/Text";
 import { Sparkles } from "lucide-react-native";
 import { LinearGradient } from 'expo-linear-gradient';
+import { useAuth } from "../hooks/useAuth";
 
 const { height } = Dimensions.get("window");
 
 export default function SplashScreen() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  
   const fadeAnim = new Animated.Value(0);
   const scaleAnim = new Animated.Value(0.9);
   const slideAnim = new Animated.Value(20);
@@ -33,12 +36,17 @@ export default function SplashScreen() {
       }),
     ]).start();
 
-    const timer = setTimeout(() => {
-      router.replace("/onboarding");
-    }, 2500);
-
-    return () => clearTimeout(timer);
-  }, []);
+    if (!authLoading) {
+      const timer = setTimeout(() => {
+        if (user) {
+          router.replace("/(tabs)");
+        } else {
+          router.replace("/onboarding");
+        }
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [authLoading, user]);
 
   return (
     <View className="flex-1">
