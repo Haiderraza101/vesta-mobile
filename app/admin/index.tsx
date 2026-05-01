@@ -590,7 +590,7 @@ export default function AdminDashboard() {
       {activeTab === 'management' && renderManagement()}
       {activeTab === 'profile' && renderProfile()}
 
-      <View className="absolute bottom-10 left-6 right-6">
+      <View className="absolute bottom-14 left-6 right-6">
         <View className="bg-slate-900 h-20 rounded-full flex-row items-center justify-around px-4 shadow-2xl shadow-slate-900/40 border border-white/5">
           <TouchableOpacity 
             onPress={() => setActiveTab('home')}
