@@ -6,21 +6,32 @@ import { Text } from "../../components/ui/Text";
 import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 import { useToast } from "../../context/ToastContext";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff } from "lucide-react-native";
+import { ArrowLeft, Mail, Lock } from "lucide-react-native";
+import { authService } from "../../services/authService";
 
 export default function Login() {
   const router = useRouter();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
+    if (!email || !password) {
+      showToast("Please enter email and password", "error");
+      return;
+    }
+
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      showToast("Successfully logged in!", "success");
+    try {
+      await authService.signIn(email, password);
+      showToast("Welcome back!", "success");
       router.replace("/(tabs)");
-    }, 1500);
+    } catch (error: any) {
+      showToast(error.message || "Login failed", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -44,38 +55,36 @@ export default function Login() {
 
           <View className="mb-12">
             <Text weight="bold" className="text-4xl mb-4 text-slate-900">Welcome Back</Text>
-            <Text className="text-slate-500 text-lg leading-7">Enter your credentials to continue managing your home services.</Text>
+            <Text className="text-slate-500 text-lg leading-7">Sign in to continue your home maintenance journey.</Text>
           </View>
 
-          <View className="gap-8">
+          <View className="gap-6">
             <Input 
               label="Email Address"
               placeholder="name@example.com"
               keyboardType="email-address"
               autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
               leftIcon={<Mail size={20} color="#94A3B8" />}
             />
-            <View>
-              <Input 
-                label="Password"
-                placeholder="••••••••"
-                secureTextEntry={!showPassword}
-                leftIcon={<Lock size={20} color="#94A3B8" />}
-                rightIcon={
-                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                    {showPassword ? <EyeOff size={20} color="#94A3B8" /> : <Eye size={20} color="#94A3B8" />}
-                  </TouchableOpacity>
-                }
-              />
-              <TouchableOpacity className="mt-4 self-end">
-                <Text weight="bold" className="text-primary text-sm uppercase tracking-widest">Forgot Password?</Text>
-              </TouchableOpacity>
-            </View>
+            <Input 
+              label="Password"
+              placeholder="Enter your password"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+              leftIcon={<Lock size={20} color="#94A3B8" />}
+            />
+            
+            <TouchableOpacity className="items-end">
+              <Text weight="semibold" className="text-primary text-sm uppercase tracking-wider">Forgot Password?</Text>
+            </TouchableOpacity>
           </View>
 
           <View className="mt-auto py-10">
             <Button 
-              title="Login" 
+              title="Log In" 
               onPress={handleLogin} 
               loading={loading}
               size="lg"
