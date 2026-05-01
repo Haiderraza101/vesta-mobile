@@ -6,6 +6,7 @@ import { Text } from "../../components/ui/Text";
 import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 import { AppModal } from "../../components/ui/AppModal";
+import { ImageSourceModal } from "../../components/ui/ImageSourceModal";
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle } from 'react-native-svg';
 import { 
@@ -29,17 +30,17 @@ import {
   LogOut,
   User,
   Camera,
-  Shield,
-  Activity,
-  Cpu,
-  Globe
+  Shield
 } from "lucide-react-native";
 import { serviceService } from "../../services/serviceService";
 import { bookingService } from "../../services/bookingService";
 import { userService } from "../../services/userService";
+import { storageService } from "../../services/storageService";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { useDisclosure } from "../../hooks/useDisclosure";
+import { db } from "../../lib/firebase";
+import { collection, onSnapshot, query, orderBy, limit } from "firebase/firestore";
 
 type TabType = 'home' | 'analytics' | 'management' | 'profile';
 
@@ -49,11 +50,13 @@ export default function AdminDashboard() {
   const { showToast } = useToast();
   const logoutDisclosure = useDisclosure();
   const editDisclosure = useDisclosure();
+  const imageSourceDisclosure = useDisclosure();
   const scrollRef = useRef<ScrollView>(null);
 
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [name, setName] = useState(userProfile?.fullName || "");
   const [updating, setUpdating] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalProviders: 0,
@@ -70,57 +73,88 @@ export default function AdminDashboard() {
   });
   const [loading, setLoading] = useState(true);
 
+  // Real-time Data Listeners
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [allUsers, allCategories, allServices] = await Promise.all([
-          userService.getAllUsers(),
-          serviceService.getCategories(),
-          serviceService.getPopularServices()
-        ]);
+    let usersLoaded = false;
+    let categoriesLoaded = false;
+    let servicesLoaded = false;
+    let bookingsLoaded = false;
 
-        const allBookings = await new Promise<any[]>((resolve) => {
-          bookingService.subscribeToBookings('all', 'admin', (data) => resolve(data));
-        });
-
-        const serviceCounts: { [key: string]: number } = {};
-        allBookings.forEach(b => {
-          if (b.serviceName) {
-            serviceCounts[b.serviceName] = (serviceCounts[b.serviceName] || 0) + 1;
-          }
-        });
-
-        const colors = ['#4C6FFF', '#10B981', '#F59E0B', '#8B5CF6'];
-        const topServices = Object.entries(serviceCounts)
-          .sort(([, a], [, b]) => b - a)
-          .slice(0, 4)
-          .map(([name, count], i) => ({
-            name,
-            count,
-            color: colors[i] || '#4C6FFF'
-          }));
-
-        setStats({
-          totalUsers: allUsers.length,
-          totalProviders: allUsers.filter(u => u.role === 'provider').length,
-          totalCustomers: allUsers.filter(u => u.role === 'customer').length,
-          totalAdmins: allUsers.filter(u => u.role === 'admin').length,
-          totalBookings: allBookings.length,
-          pendingBookings: allBookings.filter(b => b.status === 'pending').length,
-          completedBookings: allBookings.filter(b => b.status === 'completed').length,
-          cancelledBookings: allBookings.filter(b => b.status === 'cancelled').length,
-          totalServices: allServices.length,
-          totalCategories: allCategories.length,
-          recentBookings: allBookings.slice(0, 3),
-          topServices
-        });
-      } catch (error) {
-        console.error("Stats fetch error:", error);
-      } finally {
+    const checkLoading = () => {
+      if (usersLoaded && categoriesLoaded && servicesLoaded && bookingsLoaded) {
         setLoading(false);
       }
     };
-    fetchData();
+
+    // 1. Users Listener
+    const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
+      const allUsers = snapshot.docs.map(doc => doc.data());
+      setStats(prev => ({
+        ...prev,
+        totalUsers: allUsers.length,
+        totalProviders: allUsers.filter(u => u.role === 'provider').length,
+        totalCustomers: allUsers.filter(u => u.role === 'customer').length,
+        totalAdmins: allUsers.filter(u => u.role === 'admin').length,
+      }));
+      usersLoaded = true;
+      checkLoading();
+    });
+
+    // 2. Categories Listener
+    const unsubCategories = onSnapshot(collection(db, "categories"), (snapshot) => {
+      setStats(prev => ({ ...prev, totalCategories: snapshot.size }));
+      categoriesLoaded = true;
+      checkLoading();
+    });
+
+    // 3. Services Listener
+    const unsubServices = onSnapshot(collection(db, "services"), (snapshot) => {
+      setStats(prev => ({ ...prev, totalServices: snapshot.size }));
+      servicesLoaded = true;
+      checkLoading();
+    });
+
+    // 4. Bookings & Analytics Listener
+    const unsubBookings = onSnapshot(collection(db, "bookings"), (snapshot) => {
+      const allBookings = snapshot.docs.map(doc => doc.data());
+      
+      // Calculate top services for analytics
+      const serviceCounts: { [key: string]: number } = {};
+      allBookings.forEach(b => {
+        if (b.serviceName) {
+          serviceCounts[b.serviceName] = (serviceCounts[b.serviceName] || 0) + 1;
+        }
+      });
+
+      const colors = ['#4C6FFF', '#10B981', '#F59E0B', '#8B5CF6'];
+      const topServices = Object.entries(serviceCounts)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 4)
+        .map(([name, count], i) => ({
+          name,
+          count,
+          color: colors[i] || '#4C6FFF'
+        }));
+
+      setStats(prev => ({
+        ...prev,
+        totalBookings: allBookings.length,
+        pendingBookings: allBookings.filter(b => b.status === 'pending').length,
+        completedBookings: allBookings.filter(b => b.status === 'completed').length,
+        cancelledBookings: allBookings.filter(b => b.status === 'cancelled').length,
+        recentBookings: allBookings.sort((a, b) => b.createdAt - a.createdAt).slice(0, 3),
+        topServices
+      }));
+      bookingsLoaded = true;
+      checkLoading();
+    });
+
+    return () => {
+      unsubUsers();
+      unsubCategories();
+      unsubServices();
+      unsubBookings();
+    };
   }, []);
 
   const handleUpdateProfile = async () => {
@@ -134,6 +168,23 @@ export default function AdminDashboard() {
       showToast("Update failed", "error");
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleImageSelect = async (useCamera: boolean) => {
+    try {
+      const uri = await storageService.pickImage(useCamera);
+      
+      if (uri) {
+        setUploadingImage(true);
+        const uploadUrl = await storageService.uploadImage(uri, `avatars/${user?.uid}`);
+        await userService.updateUserProfile(user?.uid || '', { avatar: uploadUrl });
+        showToast("Identity updated", "success");
+      }
+    } catch (error: any) {
+      showToast(error.message || "Update failed", "error");
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -163,9 +214,20 @@ export default function AdminDashboard() {
       contentContainerStyle={{ paddingBottom: 160 }}
     >
       <View className="flex-row justify-between items-center mb-8">
-        <View>
-          <Text className="text-slate-400 text-base font-medium">Welcome,</Text>
-          <Text weight="bold" className="text-3xl text-slate-900">{userProfile?.fullName || 'Admin'}</Text>
+        <View className="flex-row items-center gap-4">
+          <TouchableOpacity onPress={() => setActiveTab('profile')}>
+            <View className="w-14 h-14 rounded-2xl bg-primary/10 items-center justify-center overflow-hidden border border-slate-100">
+               {userProfile?.avatar ? (
+                 <Image source={{ uri: userProfile.avatar }} className="w-full h-full" />
+               ) : (
+                 <Text weight="bold" className="text-xl text-primary">{userProfile?.fullName?.charAt(0) || 'A'}</Text>
+               )}
+            </View>
+          </TouchableOpacity>
+          <View>
+            <Text className="text-slate-400 text-sm font-medium">Welcome,</Text>
+            <Text weight="bold" className="text-xl text-slate-900">{userProfile?.fullName || 'Admin'}</Text>
+          </View>
         </View>
         <TouchableOpacity 
           onPress={() => showToast("No new notifications", "success")}
@@ -315,6 +377,13 @@ export default function AdminDashboard() {
             ))}
           </View>
         </View>
+
+        <TouchableOpacity 
+          onPress={() => setActiveTab('management')}
+          className="mt-10 py-4 bg-slate-50 rounded-2xl items-center border border-slate-100"
+        >
+           <Text weight="bold" className="text-slate-600 text-sm uppercase tracking-widest">Manage All Services</Text>
+        </TouchableOpacity>
       </View>
 
       <View className="bg-white p-8 rounded-[40px] border border-slate-50 shadow-sm mb-8">
@@ -386,13 +455,18 @@ export default function AdminDashboard() {
         <View className="flex-row items-center gap-6">
           <View className="relative">
             <View className="w-24 h-24 rounded-[32px] bg-white/20 items-center justify-center overflow-hidden border-4 border-white/20">
-              {userProfile?.avatar ? (
+              {uploadingImage ? (
+                <ActivityIndicator color="white" />
+              ) : userProfile?.avatar ? (
                 <Image source={{ uri: userProfile.avatar }} className="w-full h-full" />
               ) : (
                 <Text weight="bold" className="text-3xl text-white">{userProfile?.fullName?.charAt(0) || 'A'}</Text>
               )}
             </View>
-            <TouchableOpacity className="absolute -bottom-1 -right-1 w-9 h-9 bg-white rounded-2xl items-center justify-center border-4 border-[#4C6FFF]">
+            <TouchableOpacity 
+              onPress={imageSourceDisclosure.open}
+              className="absolute -bottom-1 -right-1 w-9 h-9 bg-white rounded-2xl items-center justify-center border-4 border-[#4C6FFF]"
+            >
               <Camera size={14} color="#4C6FFF" strokeWidth={3} />
             </TouchableOpacity>
           </View>
@@ -406,22 +480,6 @@ export default function AdminDashboard() {
           </View>
         </View>
       </LinearGradient>
-
-      <View className="mb-10">
-        <Text weight="bold" className="text-slate-400 text-[10px] uppercase tracking-widest font-bold mb-6 px-1">System Status</Text>
-        <View className="flex-row gap-4 mb-4">
-          <View className="flex-1 bg-white p-6 rounded-[32px] border border-slate-50 shadow-sm items-center">
-            <Activity size={24} color="#10B981" />
-            <Text weight="bold" className="text-slate-900 text-xs mt-3">Active</Text>
-            <Text className="text-slate-400 text-[9px] mt-1">Platform Status</Text>
-          </View>
-          <View className="flex-1 bg-white p-6 rounded-[32px] border border-slate-50 shadow-sm items-center">
-            <Cpu size={24} color="#4C6FFF" />
-            <Text weight="bold" className="text-slate-900 text-xs mt-3">v1.2.4</Text>
-            <Text className="text-slate-400 text-[9px] mt-1">App Version</Text>
-          </View>
-        </View>
-      </View>
 
       <View className="gap-4">
         <TouchableOpacity 
@@ -504,6 +562,12 @@ export default function AdminDashboard() {
           <Button title="Save Changes" className="mt-6 rounded-full" onPress={handleUpdateProfile} loading={updating} />
         </View>
       </AppModal>
+
+      <ImageSourceModal 
+        visible={imageSourceDisclosure.isOpen}
+        onClose={imageSourceDisclosure.close}
+        onSelect={handleImageSelect}
+      />
 
       <AppModal visible={logoutDisclosure.isOpen} onClose={logoutDisclosure.close} title="Sign Out">
         <View className="mt-4 items-center">
