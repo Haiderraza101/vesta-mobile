@@ -291,12 +291,6 @@ export default function AdminDashboard() {
             <Text className="text-slate-400 text-sm font-medium">{userProfile?.fullName || 'Admin'}</Text>
           </View>
         </View>
-        <TouchableOpacity 
-          onPress={() => showToast("No new notifications", "success")}
-          className="w-12 h-12 bg-white rounded-2xl items-center justify-center border border-slate-100 shadow-sm"
-        >
-          <Bell size={22} color="#4C6FFF" />
-        </TouchableOpacity>
       </View>
 
       <TouchableOpacity activeOpacity={0.9} className="mb-10">
