@@ -4,10 +4,15 @@ import { CustomTabBar } from "../../components/ui/CustomTabBar";
 import { useAuth } from "../../hooks/useAuth";
 
 export default function TabLayout() {
-  const { user, loading } = useAuth();
+  const { user, userProfile, loading } = useAuth();
 
   if (loading) return null;
   if (!user) return <Redirect href="/(auth)/login" />;
+  
+  // Admin Guard: Admins should not be in (tabs)
+  if (userProfile?.role === 'admin') {
+    return <Redirect href="/admin" />;
+  }
 
   return (
     <Tabs

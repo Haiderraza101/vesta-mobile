@@ -89,6 +89,7 @@ export default function BookingsScreen() {
         <ScrollView 
           className="flex-1 px-6 pt-6" 
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 160 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4C6FFF" />}
         >
           <View className="pb-40">

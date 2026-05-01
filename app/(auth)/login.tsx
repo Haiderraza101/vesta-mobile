@@ -24,9 +24,17 @@ export default function Login() {
 
     setLoading(true);
     try {
-      await authService.signIn(email, password);
+      const user = await authService.signIn(email, password);
+      const { userService } = require("../../services/userService");
+      const profile = await userService.getUserProfile(user.uid);
+      
       showToast("Welcome back!", "success");
-      router.replace("/(tabs)");
+      
+      if (profile?.role === 'admin') {
+        router.replace("/admin");
+      } else {
+        router.replace("/(tabs)");
+      }
     } catch (error: any) {
       showToast(error.message || "Login failed", "error");
     } finally {

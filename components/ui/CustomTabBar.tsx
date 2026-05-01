@@ -1,15 +1,16 @@
 import React from "react";
-import { View, TouchableOpacity, StyleSheet, Animated, Platform } from "react-native";
+import { View, TouchableOpacity, StyleSheet, Dimensions, Platform } from "react-native";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { Home, Calendar, LayoutGrid, User } from "lucide-react-native";
-import { Text } from "./Text";
+import { Home, Calendar, LayoutGrid, User, MessageSquare } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const { width } = Dimensions.get('window');
 
 export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.container, { bottom: Math.max(insets.bottom, 16) }]}>
+    <View style={[styles.container, { bottom: Math.max(insets.bottom, 24) }]}>
       <View style={styles.tabBar}>
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
@@ -28,15 +29,15 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
           };
 
           const Icon = () => {
-            const color = isFocused ? "#FFFFFF" : "#94A3B8";
-            const size = 20;
+            const color = isFocused ? "#FFFFFF" : "#64748B";
+            const size = 22;
             
             switch (route.name) {
-              case "index": return <Home size={size} color={color} strokeWidth={2.5} />;
-              case "bookings": return <Calendar size={size} color={color} strokeWidth={2.5} />;
-              case "categories": return <LayoutGrid size={size} color={color} strokeWidth={2.5} />;
-              case "account": return <User size={size} color={color} strokeWidth={2.5} />;
-              default: return <Home size={size} color={color} strokeWidth={2.5} />;
+              case "index": return <Home size={size} color={color} strokeWidth={isFocused ? 2.5 : 2} />;
+              case "bookings": return <Calendar size={size} color={color} strokeWidth={isFocused ? 2.5 : 2} />;
+              case "categories": return <LayoutGrid size={size} color={color} strokeWidth={isFocused ? 2.5 : 2} />;
+              case "account": return <User size={size} color={color} strokeWidth={isFocused ? 2.5 : 2} />;
+              default: return <Home size={size} color={color} strokeWidth={isFocused ? 2.5 : 2} />;
             }
           };
 
@@ -48,19 +49,9 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
                 styles.tabItem,
                 isFocused && styles.tabItemActive
               ]}
-              activeOpacity={0.8}
+              activeOpacity={0.7}
             >
-              <View style={[
-                styles.iconContainer,
-                isFocused && styles.iconContainerActive
-              ]}>
-                <Icon />
-              </View>
-              {isFocused && (
-                <Text weight="bold" style={styles.label}>
-                  {options.tabBarLabel as string}
-                </Text>
-              )}
+              <Icon />
             </TouchableOpacity>
           );
         })}
@@ -72,61 +63,41 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: 30,
-    left: 0,
-    right: 0,
+    left: 24,
+    right: 24,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,
   },
   tabBar: {
     flexDirection: 'row',
-    height: 74,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 37,
-    paddingHorizontal: 8,
+    width: '100%',
+    height: 80,
+    backgroundColor: '#0F172A', // Dark Slate
+    borderRadius: 40,
+    paddingHorizontal: 12,
     alignItems: 'center',
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
-    borderWidth: 1.5,
-    borderColor: '#F1F5F9',
+    justifyContent: 'space-around',
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 15,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   tabItem: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 4,
-    overflow: 'hidden',
   },
   tabItemActive: {
-    flexDirection: 'row',
-    width: 'auto',
-    paddingRight: 20,
-    paddingLeft: 4,
-    backgroundColor: '#F0F5FF',
-    borderRadius: 50,
-  },
-  iconContainer: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  iconContainerActive: {
-    backgroundColor: '#4C6FFF',
-  },
-  label: {
-    color: '#1E293B',
-    marginLeft: 10,
-    fontSize: 13,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    backgroundColor: '#4C6FFF', // Primary Blue
+    shadowColor: "#4C6FFF",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
 });
