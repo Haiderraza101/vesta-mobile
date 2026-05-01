@@ -251,7 +251,7 @@ export default function AdminDashboard() {
     try {
       await signOut();
       logoutDisclosure.close();
-      router.replace("/onboarding");
+      router.replace("/(auth)/login");
       showToast("Signed out", "success");
     } catch (error) {
       showToast("Sign out failed", "error");
@@ -287,8 +287,8 @@ export default function AdminDashboard() {
             </View>
           </TouchableOpacity>
           <View>
-            <Text className="text-slate-400 text-sm font-medium">Welcome back,</Text>
-            <Text weight="bold" className="text-xl text-slate-900">{userProfile?.fullName || 'Admin'}</Text>
+            <Text weight="bold" className="text-2xl text-slate-900">Welcome back</Text>
+            <Text className="text-slate-400 text-sm font-medium">{userProfile?.fullName || 'Admin'}</Text>
           </View>
         </View>
         <TouchableOpacity 
@@ -307,14 +307,14 @@ export default function AdminDashboard() {
         >
           <View className="flex-row justify-between items-start mb-6">
             <View className="bg-primary px-4 py-1.5 rounded-full">
-              <Text weight="bold" className="text-white text-[10px] uppercase tracking-widest">Platform Status</Text>
+              <Text weight="bold" className="text-white text-[10px]">Platform status</Text>
             </View>
             <Shield size={20} color="white" opacity={0.6} />
           </View>
           <Text weight="bold" className="text-white text-2xl mb-2 leading-8">Everything is running smoothly with {stats.totalBookings} total jobs</Text>
           <View className="flex-row items-center">
             <CheckCircle2 size={14} color="#10B981" />
-            <Text className="text-emerald-500 text-sm ml-2">{stats.completedBookings} Completed Jobs</Text>
+            <Text className="text-emerald-500 text-sm ml-2">{stats.completedBookings} Completed jobs</Text>
           </View>
           
           <View className="mt-8 h-12 flex-row items-end gap-1.5">
@@ -327,7 +327,7 @@ export default function AdminDashboard() {
 
       <View className="flex-row gap-4 mb-10">
         <View className="flex-1 bg-white p-6 rounded-[32px] border border-slate-50 shadow-sm">
-          <Text className="text-slate-400 text-[10px] uppercase tracking-widest font-bold mb-4">Users</Text>
+          <Text className="text-slate-400 text-[10px] font-bold mb-4">Users</Text>
           <Text weight="bold" className="text-2xl text-slate-900 mb-2">{stats.totalUsers}</Text>
           <View className="flex-row items-center">
             <UserPlus size={12} color="#4C6FFF" />
@@ -335,7 +335,7 @@ export default function AdminDashboard() {
           </View>
         </View>
         <View className="flex-1 bg-white p-6 rounded-[32px] border border-slate-50 shadow-sm">
-          <Text className="text-slate-400 text-[10px] uppercase tracking-widest font-bold mb-4">Market</Text>
+          <Text className="text-slate-400 text-[10px] font-bold mb-4">Market</Text>
           <Text weight="bold" className="text-2xl text-slate-900 mb-2">{stats.totalServices}</Text>
           <View className="flex-row items-center">
             <Layers size={12} color="#F59E0B" />
@@ -346,9 +346,9 @@ export default function AdminDashboard() {
 
       <View className="mb-20">
         <View className="flex-row justify-between items-center mb-6">
-          <Text weight="bold" className="text-xl text-slate-900">Recent Activity</Text>
+          <Text weight="bold" className="text-xl text-slate-900">Recent activity</Text>
           <TouchableOpacity onPress={() => setActiveTab('management')}>
-            <Text weight="bold" className="text-primary text-sm uppercase tracking-wider">See All</Text>
+            <Text weight="bold" className="text-primary text-sm tracking-wider">See all</Text>
           </TouchableOpacity>
         </View>
         <View className="gap-4">
@@ -362,7 +362,7 @@ export default function AdminDashboard() {
                 <Text className="text-slate-400 text-[10px] mt-0.5">{b.date}</Text>
               </View>
               <View className={`px-3 py-1 rounded-full ${b.status === 'completed' ? 'bg-emerald-50' : 'bg-amber-50'}`}>
-                <Text weight="bold" className={`text-[10px] uppercase ${b.status === 'completed' ? 'text-emerald-500' : 'text-amber-500'}`}>{b.status}</Text>
+                <Text weight="bold" className={`text-[10px] ${b.status === 'completed' ? 'text-emerald-500' : 'text-amber-500'}`}>{b.status}</Text>
               </View>
             </View>
           ))}
@@ -382,7 +382,7 @@ export default function AdminDashboard() {
       <View className="bg-white p-8 rounded-[40px] border border-slate-50 shadow-sm mb-8">
         <View className="flex-row justify-between items-center mb-8">
           <View>
-            <Text weight="bold" className="text-lg text-slate-900">Most Popular</Text>
+            <Text weight="bold" className="text-lg text-slate-900">Most popular</Text>
             <Text className="text-slate-400 text-xs mt-0.5">Top performing services</Text>
           </View>
           <TouchableOpacity className="w-10 h-10 bg-slate-50 rounded-full items-center justify-center">
@@ -429,7 +429,7 @@ export default function AdminDashboard() {
             {stats.topServices.map((s, i) => (
               <View key={i}>
                 <View className="flex-row justify-between mb-1.5">
-                  <Text weight="bold" className="text-slate-800 text-[10px] uppercase tracking-wider flex-1 mr-2" numberOfLines={1}>{s.name}</Text>
+                  <Text weight="bold" className="text-slate-800 text-[10px] flex-1 mr-2" numberOfLines={1}>{s.name}</Text>
                   <Text weight="bold" className="text-slate-400 text-[10px]">{s.count}</Text>
                 </View>
                 <View className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
@@ -444,12 +444,12 @@ export default function AdminDashboard() {
           onPress={() => setActiveTab('management')}
           className="mt-10 py-4 bg-slate-50 rounded-2xl items-center border border-slate-100"
         >
-           <Text weight="bold" className="text-slate-600 text-sm uppercase tracking-widest">Manage All Services</Text>
+           <Text weight="bold" className="text-slate-600 text-sm tracking-widest">Manage all services</Text>
         </TouchableOpacity>
       </View>
 
       <View className="bg-white p-8 rounded-[40px] border border-slate-50 shadow-sm mb-8">
-        <Text weight="bold" className="text-lg text-slate-900 mb-6">User Types</Text>
+        <Text weight="bold" className="text-lg text-slate-900 mb-6">User types</Text>
         <View className="flex-row items-center justify-between">
           <View className="gap-4">
             {['Customers', 'Providers', 'Admins'].map((label, i) => (
@@ -532,25 +532,25 @@ export default function AdminDashboard() {
           <Text weight="bold" className="text-white text-3xl text-center mb-2">{userProfile?.fullName || 'Admin'}</Text>
           <View className="flex-row items-center gap-2 px-5 py-2 bg-white/10 rounded-full border border-white/5">
              <ShieldCheck size={14} color="#4C6FFF" strokeWidth={2.5} />
-             <Text weight="bold" className="text-white text-[10px] uppercase tracking-widest">Master Administrator</Text>
+             <Text weight="bold" className="text-white text-[10px]">Master administrator</Text>
           </View>
           
           <View className="flex-row gap-8 mt-10 w-full pt-8 border-t border-white/5">
              <View className="flex-1 items-center">
                 <Text weight="bold" className="text-white text-lg">{stats.totalUsers}</Text>
-                <Text className="text-slate-500 text-[10px] uppercase tracking-tighter">Total Users</Text>
+                <Text className="text-slate-500 text-[10px]">Total users</Text>
              </View>
              <View className="w-[1px] h-full bg-white/5" />
              <View className="flex-1 items-center">
                 <Text weight="bold" className="text-white text-lg">{stats.totalBookings}</Text>
-                <Text className="text-slate-500 text-[10px] uppercase tracking-tighter">Jobs Logged</Text>
+                <Text className="text-slate-500 text-[10px]">Jobs logged</Text>
              </View>
           </View>
         </View>
       </View>
 
       <View className="px-2">
-        <Text weight="bold" className="text-slate-400 text-[11px] uppercase tracking-[2px] mb-6 px-4">System Controls</Text>
+        <Text weight="bold" className="text-slate-400 text-[11px] mb-6 px-4">System controls</Text>
         
         <View className="bg-white rounded-[32px] border border-slate-50 shadow-sm overflow-hidden mb-6">
           <TouchableOpacity 
@@ -561,21 +561,8 @@ export default function AdminDashboard() {
                <UserCheck size={20} color="#64748B" />
             </View>
             <View className="flex-1">
-              <Text weight="bold" className="text-slate-900">Personal Details</Text>
+              <Text weight="bold" className="text-slate-900">Personal details</Text>
               <Text className="text-slate-400 text-xs">Manage your admin identity</Text>
-            </View>
-            <ChevronRight size={18} color="#CBD5E1" />
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            className="p-6 flex-row items-center gap-5 border-b border-slate-50"
-          >
-            <View className="w-12 h-12 bg-slate-50 rounded-2xl items-center justify-center">
-               <Mail size={20} color="#64748B" />
-            </View>
-            <View className="flex-1">
-              <Text weight="bold" className="text-slate-900">Support Inbox</Text>
-              <Text className="text-slate-400 text-xs">View platform inquiries</Text>
             </View>
             <ChevronRight size={18} color="#CBD5E1" />
           </TouchableOpacity>
@@ -588,8 +575,8 @@ export default function AdminDashboard() {
                <LogOut size={20} color="#F43F5E" />
             </View>
             <View className="flex-1">
-              <Text weight="bold" className="text-rose-500">End Session</Text>
-              <Text className="text-rose-200 text-xs">Securely sign out of portal</Text>
+              <Text weight="bold" className="text-rose-500">Sign out</Text>
+              <Text className="text-rose-200 text-xs">Securely logout from portal</Text>
             </View>
             <ChevronRight size={18} color="#F43F5E" opacity={0.2} />
           </TouchableOpacity>
