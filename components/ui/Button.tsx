@@ -1,11 +1,12 @@
 import React from 'react';
 import { TouchableOpacity, ActivityIndicator, View } from 'react-native';
 import { Text } from './Text';
+import { cn } from '../../utils/utils';
 
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
+  variant?: 'brand' | 'primary' | 'outline' | 'ghost' | 'destructive';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   disabled?: boolean;
@@ -16,34 +17,34 @@ interface ButtonProps {
 export function Button({ 
   title, 
   onPress, 
-  variant = 'primary', 
+  variant = 'brand',
   size = 'md', 
   loading = false, 
   disabled = false, 
   className = '',
   icon
 }: ButtonProps) {
-  const baseStyles = "flex-row items-center justify-center rounded-[18px]";
+  const baseStyles = "flex-row items-center justify-center rounded-xl";
   
   const variants = {
+    brand: "bg-brand",
     primary: "bg-primary",
-    secondary: "bg-slate-900",
-    outline: "bg-transparent border-2 border-primary/20",
+    outline: "bg-transparent border border-border",
     ghost: "bg-transparent",
-    destructive: "bg-red-500",
+    destructive: "bg-destructive",
   };
 
   const sizes = {
-    sm: "px-4 py-2.5",
-    md: "px-6 py-4",
-    lg: "px-8 py-5",
+    sm: "px-4 py-2",
+    md: "px-6 py-3.5",
+    lg: "px-8 py-4.5",
   };
 
   const textColors = {
+    brand: "text-white",
     primary: "text-white",
-    secondary: "text-white",
-    outline: "text-primary",
-    ghost: "text-slate-600",
+    outline: "text-foreground",
+    ghost: "text-muted",
     destructive: "text-white",
   };
 
@@ -55,17 +56,23 @@ export function Button({
 
   return (
     <TouchableOpacity
-      activeOpacity={0.8}
+      activeOpacity={0.7}
       onPress={onPress}
       disabled={disabled || loading}
-      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className} ${disabled ? 'opacity-50' : ''}`}
+      className={cn(
+        baseStyles,
+        variants[variant],
+        sizes[size],
+        disabled && "opacity-50",
+        className
+      )}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'outline' ? '#4C6FFF' : 'white'} />
+        <ActivityIndicator color={variant === 'outline' || variant === 'ghost' ? '#2563EB' : 'white'} />
       ) : (
         <View className="flex-row items-center justify-center">
-          {icon && <View className="mr-2">{icon}</View>}
-          <Text weight="bold" className={`${textColors[variant]} ${textSizes[size]}`}>
+          {icon && <View className="mr-2.5">{icon}</View>}
+          <Text weight="semibold" className={cn(textColors[variant], textSizes[size])}>
             {title}
           </Text>
         </View>

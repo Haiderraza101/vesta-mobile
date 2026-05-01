@@ -6,23 +6,27 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          DEFAULT: "#4C6FFF",
+          DEFAULT: "#0F172A",
+          foreground: "#FFFFFF",
+        },
+        brand: {
+          DEFAULT: "#2563EB",
           foreground: "#FFFFFF",
         },
         secondary: {
-          DEFAULT: "#F8FAFC",
-          foreground: "#0F172A",
+          DEFAULT: "#64748B",
+          foreground: "#FFFFFF",
         },
         accent: {
-          DEFAULT: "#4C6FFF",
+          DEFAULT: "#10B981",
           foreground: "#FFFFFF",
         },
         muted: {
-          DEFAULT: "#64748B",
+          DEFAULT: "#94A3B8",
           foreground: "#F8FAFC",
         },
-        border: "#F1F5F9",
-        background: "#FFFFFF",
+        border: "#E2E8F0",
+        background: "#F8FAFC",
         foreground: "#0F172A",
         destructive: "#EF4444",
       },

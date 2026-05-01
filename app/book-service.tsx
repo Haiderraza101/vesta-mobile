@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { View, SafeAreaView, ScrollView, TouchableOpacity } from "react-native";
+import { View, ScrollView, TouchableOpacity } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Text } from "../components/ui/Text";
 import { Button } from "../components/ui/Button";
@@ -36,7 +37,7 @@ export default function BookServiceScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
       <View className="flex-1 px-6 pt-6">
         <View className="flex-row items-center gap-4 mb-10">
           <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center -ml-2">

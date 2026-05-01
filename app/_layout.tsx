@@ -3,8 +3,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from "@expo-google-fonts/poppins";
 import * as SplashScreen from "expo-splash-screen";
-import { ThemeProvider } from "../context/ThemeContext";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { AuthProvider } from "../src/context/AuthContext";
+import { BookingProvider } from "../src/context/BookingContext";
 import { ToastProvider } from "../context/ToastContext";
+import Toast from 'react-native-toast-message';
 import "../globals.css";
 
 SplashScreen.preventAutoHideAsync();
@@ -31,17 +34,22 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <ToastProvider>
-          <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
-            <Stack.Screen name="splash" />
-            <Stack.Screen name="onboarding" />
-            <Stack.Screen name="(auth)" options={{ animation: 'slide_from_bottom' }} />
-            <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
-            <Stack.Screen name="book-service" options={{ animation: 'slide_from_bottom' }} />
-          </Stack>
-        </ToastProvider>
-      </ThemeProvider>
+      <ToastProvider>
+        <SafeAreaProvider>
+          <AuthProvider>
+            <BookingProvider>
+              <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
+                <Stack.Screen name="index" />
+                <Stack.Screen name="splash" />
+                <Stack.Screen name="onboarding" />
+                <Stack.Screen name="(customer-tabs)" />
+                <Stack.Screen name="(provider-tabs)" />
+              </Stack>
+              <Toast />
+            </BookingProvider>
+          </AuthProvider>
+        </SafeAreaProvider>
+      </ToastProvider>
     </QueryClientProvider>
   );
 }

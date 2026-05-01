@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, TouchableOpacity, ViewProps, TouchableOpacityProps, StyleSheet } from 'react-native';
-import { Text } from './Text';
+import { View, TouchableOpacity } from 'react-native';
+import { cn } from '../../utils/utils';
+import { theme } from '../../src/utils/theme';
 
 interface CardProps {
   children: React.ReactNode;
@@ -10,18 +11,21 @@ interface CardProps {
   style?: any;
 }
 
-export function Card({ children, onPress, variant = 'elevated', className = '', style, ...props }: CardProps) {
-  const baseStyles = "rounded-[28px] overflow-hidden";
+export function Card({ children, onPress, variant = 'elevated', className = '', style }: CardProps) {
+  const baseStyles = "rounded-2xl overflow-hidden";
+
   const variants = {
-    elevated: "bg-white shadow-sm border border-slate-50",
-    outline: "bg-transparent border border-slate-100",
-    flat: "bg-slate-50",
+    elevated: "bg-white border border-slate-100",
+    outline: "bg-transparent border border-border",
+    flat: "bg-slate-100",
   };
+
+  const shadowStyle = variant === 'elevated' ? theme.shadows.sm : {};
 
   const content = (
     <View 
-      className={`${baseStyles} ${variants[variant]} ${className}`}
-      style={style}
+      className={cn(baseStyles, variants[variant], className)}
+      style={[shadowStyle, style]}
     >
       {children}
     </View>
@@ -30,7 +34,7 @@ export function Card({ children, onPress, variant = 'elevated', className = '', 
   if (onPress) {
     return (
       <TouchableOpacity 
-        activeOpacity={0.8} 
+        activeOpacity={0.9}
         onPress={onPress}
       >
         {content}
