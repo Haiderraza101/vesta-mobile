@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
-import { View, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, Dimensions, Image } from "react-native";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { View, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, Dimensions, Image, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Text } from "../../components/ui/Text";
 import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
@@ -9,6 +9,7 @@ import { AppModal } from "../../components/ui/AppModal";
 import { ImageSourceModal } from "../../components/ui/ImageSourceModal";
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle } from 'react-native-svg';
+import * as ImagePicker from 'expo-image-picker';
 import { 
   Users, 
   Layers, 
@@ -40,7 +41,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { useDisclosure } from "../../hooks/useDisclosure";
 import { db } from "../../lib/firebase";
-import { collection, onSnapshot, query, orderBy, limit } from "firebase/firestore";
+import { collection, onSnapshot, getDocs, query, orderBy, limit } from "firebase/firestore";
 
 type TabType = 'home' | 'analytics' | 'management' | 'profile';
 
@@ -57,6 +58,7 @@ export default function AdminDashboard() {
   const [name, setName] = useState(userProfile?.fullName || "");
   const [updating, setUpdating] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalProviders: 0,
@@ -73,6 +75,69 @@ export default function AdminDashboard() {
   });
   const [loading, setLoading] = useState(true);
 
+  // Manual Data Fetch for Refresh/Focus
+  const refreshStats = async () => {
+    try {
+      const [usersSnap, catsSnap, servsSnap, booksSnap] = await Promise.all([
+        getDocs(collection(db, "users")),
+        getDocs(collection(db, "categories")),
+        getDocs(collection(db, "services")),
+        getDocs(collection(db, "bookings"))
+      ]);
+
+      const allUsers = usersSnap.docs.map(doc => doc.data());
+      const allBookings = booksSnap.docs.map(doc => doc.data());
+
+      const serviceCounts: { [key: string]: number } = {};
+      allBookings.forEach(b => {
+        if (b.serviceName) {
+          serviceCounts[b.serviceName] = (serviceCounts[b.serviceName] || 0) + 1;
+        }
+      });
+
+      const colors = ['#4C6FFF', '#10B981', '#F59E0B', '#8B5CF6'];
+      const topServices = Object.entries(serviceCounts)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 4)
+        .map(([name, count], i) => ({
+          name,
+          count,
+          color: colors[i] || '#4C6FFF'
+        }));
+
+      setStats({
+        totalUsers: allUsers.length,
+        totalProviders: allUsers.filter(u => u.role === 'provider').length,
+        totalCustomers: allUsers.filter(u => u.role === 'customer').length,
+        totalAdmins: allUsers.filter(u => u.role === 'admin').length,
+        totalBookings: allBookings.length,
+        pendingBookings: allBookings.filter(b => b.status === 'pending').length,
+        completedBookings: allBookings.filter(b => b.status === 'completed').length,
+        cancelledBookings: allBookings.filter(b => b.status === 'cancelled').length,
+        totalServices: servsSnap.size,
+        totalCategories: catsSnap.size,
+        recentBookings: allBookings.sort((a, b) => b.createdAt - a.createdAt).slice(0, 3),
+        topServices
+      });
+    } catch (error) {
+      console.error("Refresh error:", error);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refreshStats();
+    setRefreshing(false);
+    showToast("Data updated", "success");
+  };
+
+  // Re-fetch data whenever the screen comes into focus (e.g., returning from Management)
+  useFocusEffect(
+    useCallback(() => {
+      refreshStats();
+    }, [])
+  );
+
   // Real-time Data Listeners
   useEffect(() => {
     let usersLoaded = false;
@@ -86,7 +151,6 @@ export default function AdminDashboard() {
       }
     };
 
-    // 1. Users Listener
     const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
       const allUsers = snapshot.docs.map(doc => doc.data());
       setStats(prev => ({
@@ -100,25 +164,20 @@ export default function AdminDashboard() {
       checkLoading();
     });
 
-    // 2. Categories Listener
     const unsubCategories = onSnapshot(collection(db, "categories"), (snapshot) => {
       setStats(prev => ({ ...prev, totalCategories: snapshot.size }));
       categoriesLoaded = true;
       checkLoading();
     });
 
-    // 3. Services Listener
     const unsubServices = onSnapshot(collection(db, "services"), (snapshot) => {
       setStats(prev => ({ ...prev, totalServices: snapshot.size }));
       servicesLoaded = true;
       checkLoading();
     });
 
-    // 4. Bookings & Analytics Listener
     const unsubBookings = onSnapshot(collection(db, "bookings"), (snapshot) => {
       const allBookings = snapshot.docs.map(doc => doc.data());
-      
-      // Calculate top services for analytics
       const serviceCounts: { [key: string]: number } = {};
       allBookings.forEach(b => {
         if (b.serviceName) {
@@ -174,7 +233,6 @@ export default function AdminDashboard() {
   const handleImageSelect = async (useCamera: boolean) => {
     try {
       const uri = await storageService.pickImage(useCamera);
-      
       if (uri) {
         setUploadingImage(true);
         const uploadUrl = await storageService.uploadImage(uri, `avatars/${user?.uid}`);
@@ -212,6 +270,9 @@ export default function AdminDashboard() {
       className="flex-1 px-6 pt-4" 
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingBottom: 160 }}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4C6FFF" />
+      }
     >
       <View className="flex-row justify-between items-center mb-8">
         <View className="flex-row items-center gap-4">
@@ -225,7 +286,7 @@ export default function AdminDashboard() {
             </View>
           </TouchableOpacity>
           <View>
-            <Text className="text-slate-400 text-sm font-medium">Welcome,</Text>
+            <Text className="text-slate-400 text-sm font-medium">Welcome back,</Text>
             <Text weight="bold" className="text-xl text-slate-900">{userProfile?.fullName || 'Admin'}</Text>
           </View>
         </View>
