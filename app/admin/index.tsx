@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { View, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, Dimensions, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -7,7 +7,7 @@ import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 import { AppModal } from "../../components/ui/AppModal";
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
+import Svg, { Circle } from 'react-native-svg';
 import { 
   Users, 
   Layers, 
@@ -29,8 +29,10 @@ import {
   LogOut,
   User,
   Camera,
-  Mail,
-  Shield
+  Shield,
+  Activity,
+  Cpu,
+  Globe
 } from "lucide-react-native";
 import { serviceService } from "../../services/serviceService";
 import { bookingService } from "../../services/bookingService";
@@ -39,14 +41,15 @@ import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { useDisclosure } from "../../hooks/useDisclosure";
 
-type TabType = 'home' | 'management' | 'analytics' | 'profile';
+type TabType = 'home' | 'analytics' | 'management' | 'profile';
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const { userProfile, signOut } = useAuth();
+  const { user, userProfile, signOut } = useAuth();
   const { showToast } = useToast();
   const logoutDisclosure = useDisclosure();
   const editDisclosure = useDisclosure();
+  const scrollRef = useRef<ScrollView>(null);
 
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [name, setName] = useState(userProfile?.fullName || "");
@@ -80,7 +83,6 @@ export default function AdminDashboard() {
           bookingService.subscribeToBookings('all', 'admin', (data) => resolve(data));
         });
 
-        // Calculate Service Popularity
         const serviceCounts: { [key: string]: number } = {};
         allBookings.forEach(b => {
           if (b.serviceName) {
@@ -140,31 +142,35 @@ export default function AdminDashboard() {
       await signOut();
       logoutDisclosure.close();
       router.replace("/onboarding");
-      showToast("Logged out", "success");
+      showToast("Signed out", "success");
     } catch (error) {
-      showToast("Logout failed", "error");
+      showToast("Sign out failed", "error");
     }
   };
 
   const ADMIN_MENU = [
     { id: 'cats', title: "Categories", subtitle: "Manage groupings", icon: Layers, route: "/admin/categories" },
-    { id: 'services', title: "Services", subtitle: "Standard listings", icon: Briefcase, route: "/admin/services" },
-    { id: 'users', title: "Users", subtitle: "Roles & Access", icon: ShieldCheck, route: "/admin/users" },
-    { id: 'settings', title: "Settings", subtitle: "Global config", icon: Settings, route: "/admin/settings" }
+    { id: 'services', title: "Services", subtitle: "Manage listings", icon: Briefcase, route: "/admin/services" },
+    { id: 'users', title: "Users", subtitle: "Manage accounts", icon: ShieldCheck, route: "/admin/users" },
+    { id: 'settings', title: "Settings", subtitle: "App configuration", icon: Settings, route: "/admin/settings" }
   ];
 
   const renderHome = () => (
     <ScrollView 
+      ref={scrollRef}
       className="flex-1 px-6 pt-4" 
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingBottom: 160 }}
     >
       <View className="flex-row justify-between items-center mb-8">
         <View>
-          <Text className="text-slate-400 text-base">Command Center,</Text>
+          <Text className="text-slate-400 text-base font-medium">Welcome,</Text>
           <Text weight="bold" className="text-3xl text-slate-900">{userProfile?.fullName || 'Admin'}</Text>
         </View>
-        <TouchableOpacity className="w-12 h-12 bg-white rounded-2xl items-center justify-center border border-slate-100">
+        <TouchableOpacity 
+          onPress={() => showToast("No new notifications", "success")}
+          className="w-12 h-12 bg-white rounded-2xl items-center justify-center border border-slate-100 shadow-sm"
+        >
           <Bell size={22} color="#4C6FFF" />
         </TouchableOpacity>
       </View>
@@ -177,14 +183,14 @@ export default function AdminDashboard() {
         >
           <View className="flex-row justify-between items-start mb-6">
             <View className="bg-primary px-4 py-1.5 rounded-full">
-              <Text weight="bold" className="text-white text-[10px] uppercase tracking-widest">Platform Health</Text>
+              <Text weight="bold" className="text-white text-[10px] uppercase tracking-widest">Platform Status</Text>
             </View>
             <Shield size={20} color="white" opacity={0.6} />
           </View>
-          <Text weight="bold" className="text-white text-2xl mb-2 leading-8">Marketplace activity is thriving with {stats.totalBookings} total jobs</Text>
+          <Text weight="bold" className="text-white text-2xl mb-2 leading-8">Everything is running smoothly with {stats.totalBookings} total jobs</Text>
           <View className="flex-row items-center">
             <CheckCircle2 size={14} color="#10B981" />
-            <Text className="text-emerald-500 text-sm ml-2">{stats.completedBookings} Completed Successfully</Text>
+            <Text className="text-emerald-500 text-sm ml-2">{stats.completedBookings} Completed Jobs</Text>
           </View>
           
           <View className="mt-8 h-12 flex-row items-end gap-1.5">
@@ -197,7 +203,7 @@ export default function AdminDashboard() {
 
       <View className="flex-row gap-4 mb-10">
         <View className="flex-1 bg-white p-6 rounded-[32px] border border-slate-50 shadow-sm">
-          <Text className="text-slate-400 text-[10px] uppercase tracking-widest font-bold mb-4">Total Users</Text>
+          <Text className="text-slate-400 text-[10px] uppercase tracking-widest font-bold mb-4">Users</Text>
           <Text weight="bold" className="text-2xl text-slate-900 mb-2">{stats.totalUsers}</Text>
           <View className="flex-row items-center">
             <UserPlus size={12} color="#4C6FFF" />
@@ -205,7 +211,7 @@ export default function AdminDashboard() {
           </View>
         </View>
         <View className="flex-1 bg-white p-6 rounded-[32px] border border-slate-50 shadow-sm">
-          <Text className="text-slate-400 text-[10px] uppercase tracking-widest font-bold mb-4">Services</Text>
+          <Text className="text-slate-400 text-[10px] uppercase tracking-widest font-bold mb-4">Market</Text>
           <Text weight="bold" className="text-2xl text-slate-900 mb-2">{stats.totalServices}</Text>
           <View className="flex-row items-center">
             <Layers size={12} color="#F59E0B" />
@@ -217,7 +223,9 @@ export default function AdminDashboard() {
       <View className="mb-20">
         <View className="flex-row justify-between items-center mb-6">
           <Text weight="bold" className="text-xl text-slate-900">Recent Activity</Text>
-          <TouchableOpacity><Text weight="bold" className="text-primary text-sm">See All</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => setActiveTab('management')}>
+            <Text weight="bold" className="text-primary text-sm uppercase tracking-wider">See All</Text>
+          </TouchableOpacity>
         </View>
         <View className="gap-4">
           {stats.recentBookings.map((b, i) => (
@@ -245,13 +253,13 @@ export default function AdminDashboard() {
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingBottom: 160 }}
     >
-      <Text weight="bold" className="text-2xl text-slate-900 mb-8">Platform Performance</Text>
+      <Text weight="bold" className="text-2xl text-slate-900 mb-8">Analytics</Text>
 
       <View className="bg-white p-8 rounded-[40px] border border-slate-50 shadow-sm mb-8">
         <View className="flex-row justify-between items-center mb-8">
           <View>
-            <Text weight="bold" className="text-lg text-slate-900">Service Demand</Text>
-            <Text className="text-slate-400 text-xs mt-0.5">Most ordered services by volume</Text>
+            <Text weight="bold" className="text-lg text-slate-900">Most Popular</Text>
+            <Text className="text-slate-400 text-xs mt-0.5">Top performing services</Text>
           </View>
           <TouchableOpacity className="w-10 h-10 bg-slate-50 rounded-full items-center justify-center">
             <TrendingUp size={18} color="#4C6FFF" />
@@ -294,71 +302,37 @@ export default function AdminDashboard() {
           </View>
 
           <View className="flex-1 ml-10 gap-5">
-            {stats.topServices.length === 0 ? (
-              <Text className="text-slate-300 italic text-sm text-center">No data available</Text>
-            ) : (
-              stats.topServices.map((s, i) => (
-                <View key={i}>
-                  <View className="flex-row justify-between mb-1.5">
-                    <Text weight="bold" className="text-slate-800 text-[10px] uppercase tracking-wider flex-1 mr-2" numberOfLines={1}>{s.name}</Text>
-                    <Text weight="bold" className="text-slate-400 text-[10px]">{s.count}</Text>
-                  </View>
-                  <View className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
-                    <View style={{ width: `${(s.count / (stats.topServices[0]?.count || 1)) * 100}%`, backgroundColor: s.color }} className="h-full rounded-full" />
-                  </View>
+            {stats.topServices.map((s, i) => (
+              <View key={i}>
+                <View className="flex-row justify-between mb-1.5">
+                  <Text weight="bold" className="text-slate-800 text-[10px] uppercase tracking-wider flex-1 mr-2" numberOfLines={1}>{s.name}</Text>
+                  <Text weight="bold" className="text-slate-400 text-[10px]">{s.count}</Text>
                 </View>
-              ))
-            )}
+                <View className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
+                  <View style={{ width: `${(s.count / (stats.topServices[0]?.count || 1)) * 100}%`, backgroundColor: s.color }} className="h-full rounded-full" />
+                </View>
+              </View>
+            ))}
           </View>
         </View>
       </View>
 
       <View className="bg-white p-8 rounded-[40px] border border-slate-50 shadow-sm mb-8">
-        <Text weight="bold" className="text-lg text-slate-900 mb-6">User Distribution</Text>
+        <Text weight="bold" className="text-lg text-slate-900 mb-6">User Types</Text>
         <View className="flex-row items-center justify-between">
           <View className="gap-4">
-            <View className="flex-row items-center gap-3">
-              <View className="w-3 h-3 rounded-full bg-primary" />
-              <Text className="text-slate-500 text-sm">Customers ({stats.totalCustomers})</Text>
-            </View>
-            <View className="flex-row items-center gap-3">
-              <View className="w-3 h-3 rounded-full bg-emerald-400" />
-              <Text className="text-slate-500 text-sm">Providers ({stats.totalProviders})</Text>
-            </View>
-            <View className="flex-row items-center gap-3">
-              <View className="w-3 h-3 rounded-full bg-slate-300" />
-              <Text className="text-slate-500 text-sm">Admins ({stats.totalAdmins})</Text>
-            </View>
+            {['Customers', 'Providers', 'Admins'].map((label, i) => (
+              <View key={label} className="flex-row items-center gap-3">
+                <View className={`w-3 h-3 rounded-full ${i === 0 ? 'bg-primary' : i === 1 ? 'bg-emerald-400' : 'bg-slate-300'}`} />
+                <Text className="text-slate-500 text-sm">{label} ({i === 0 ? stats.totalCustomers : i === 1 ? stats.totalProviders : stats.totalAdmins})</Text>
+              </View>
+            ))}
           </View>
           <Svg height="120" width="120" viewBox="0 0 100 100">
             <Circle cx="50" cy="50" r="40" stroke="#F1F5F9" strokeWidth="12" fill="none" />
-            <Circle 
-              cx="50" cy="50" r="40" 
-              stroke="#4C6FFF" strokeWidth="12" fill="none" 
-              strokeDasharray={`${(stats.totalCustomers / (stats.totalUsers || 1)) * 251}, 251`} 
-              strokeDashoffset="0"
-              strokeLinecap="round" 
-              rotation="-90"
-              origin="50, 50"
-            />
-            <Circle 
-              cx="50" cy="50" r="40" 
-              stroke="#10B981" strokeWidth="12" fill="none" 
-              strokeDasharray={`${(stats.totalProviders / (stats.totalUsers || 1)) * 251}, 251`} 
-              strokeDashoffset={`${- (stats.totalCustomers / (stats.totalUsers || 1)) * 251}`}
-              strokeLinecap="round" 
-              rotation="-90"
-              origin="50, 50"
-            />
-            <Circle 
-              cx="50" cy="50" r="40" 
-              stroke="#94A3B8" strokeWidth="12" fill="none" 
-              strokeDasharray={`${(stats.totalAdmins / (stats.totalUsers || 1)) * 251}, 251`} 
-              strokeDashoffset={`${- ((stats.totalCustomers + stats.totalProviders) / (stats.totalUsers || 1)) * 251}`}
-              strokeLinecap="round" 
-              rotation="-90"
-              origin="50, 50"
-            />
+            <Circle cx="50" cy="50" r="40" stroke="#4C6FFF" strokeWidth="12" fill="none" strokeDasharray={`${(stats.totalCustomers / (stats.totalUsers || 1)) * 251}, 251`} strokeDashoffset="0" strokeLinecap="round" rotation="-90" origin="50, 50" />
+            <Circle cx="50" cy="50" r="40" stroke="#10B981" strokeWidth="12" fill="none" strokeDasharray={`${(stats.totalProviders / (stats.totalUsers || 1)) * 251}, 251`} strokeDashoffset={`${- (stats.totalCustomers / (stats.totalUsers || 1)) * 251}`} strokeLinecap="round" rotation="-90" origin="50, 50" />
+            <Circle cx="50" cy="50" r="40" stroke="#94A3B8" strokeWidth="12" fill="none" strokeDasharray={`${(stats.totalAdmins / (stats.totalUsers || 1)) * 251}, 251`} strokeDashoffset={`${- ((stats.totalCustomers + stats.totalProviders) / (stats.totalUsers || 1)) * 251}`} strokeLinecap="round" rotation="-90" origin="50, 50" />
           </Svg>
         </View>
       </View>
@@ -371,7 +345,7 @@ export default function AdminDashboard() {
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingBottom: 160 }}
     >
-      <Text weight="bold" className="text-2xl text-slate-900 mb-8">Platform Controls</Text>
+      <Text weight="bold" className="text-2xl text-slate-900 mb-8">Management</Text>
       <View className="gap-5 pb-32">
         {ADMIN_MENU.map((item) => (
           <TouchableOpacity 
@@ -402,34 +376,65 @@ export default function AdminDashboard() {
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingBottom: 160 }}
     >
-      <Text weight="bold" className="text-2xl text-slate-900 mb-8">Admin Profile</Text>
+      <Text weight="bold" className="text-2xl text-slate-900 mb-8">Account</Text>
       
-      <View className="bg-white p-8 rounded-[40px] border border-slate-50 shadow-sm mb-10 items-center">
-        <View className="relative mb-6">
-          <View className="w-24 h-24 rounded-[32px] bg-primary/10 items-center justify-center overflow-hidden border-4 border-slate-50">
-            {userProfile?.avatar ? (
-              <Image source={{ uri: userProfile.avatar }} className="w-full h-full" />
-            ) : (
-              <Text weight="bold" className="text-3xl text-primary">{userProfile?.fullName?.charAt(0) || 'A'}</Text>
-            )}
+      <LinearGradient 
+        colors={['#4C6FFF', '#3B5BDB']} 
+        start={{x: 0, y: 0}} end={{x: 1, y: 1}}
+        className="p-8 rounded-[40px] shadow-xl shadow-primary/30 mb-10"
+      >
+        <View className="flex-row items-center gap-6">
+          <View className="relative">
+            <View className="w-24 h-24 rounded-[32px] bg-white/20 items-center justify-center overflow-hidden border-4 border-white/20">
+              {userProfile?.avatar ? (
+                <Image source={{ uri: userProfile.avatar }} className="w-full h-full" />
+              ) : (
+                <Text weight="bold" className="text-3xl text-white">{userProfile?.fullName?.charAt(0) || 'A'}</Text>
+              )}
+            </View>
+            <TouchableOpacity className="absolute -bottom-1 -right-1 w-9 h-9 bg-white rounded-2xl items-center justify-center border-4 border-[#4C6FFF]">
+              <Camera size={14} color="#4C6FFF" strokeWidth={3} />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity className="absolute -bottom-2 -right-2 w-10 h-10 bg-primary rounded-2xl items-center justify-center border-4 border-white">
-            <Camera size={16} color="white" />
-          </TouchableOpacity>
+          <View className="flex-1">
+            <Text weight="bold" className="text-white text-2xl mb-1">{userProfile?.fullName || 'Admin'}</Text>
+            <View className="flex-row items-center gap-1.5 px-3 py-1 bg-white/20 self-start rounded-full">
+               <Shield size={10} color="white" />
+               <Text weight="bold" className="text-white text-[9px] uppercase tracking-widest">Administrator</Text>
+            </View>
+            <Text className="text-white/60 text-[10px] mt-3 font-medium">Session ID: {user?.uid?.substring(0, 8)}</Text>
+          </View>
         </View>
-        <Text weight="bold" className="text-2xl text-slate-900">{userProfile?.fullName || 'Admin'}</Text>
-        <Text className="text-slate-400 text-sm mt-1 uppercase tracking-widest font-bold">Platform Superuser</Text>
+      </LinearGradient>
+
+      <View className="mb-10">
+        <Text weight="bold" className="text-slate-400 text-[10px] uppercase tracking-widest font-bold mb-6 px-1">System Status</Text>
+        <View className="flex-row gap-4 mb-4">
+          <View className="flex-1 bg-white p-6 rounded-[32px] border border-slate-50 shadow-sm items-center">
+            <Activity size={24} color="#10B981" />
+            <Text weight="bold" className="text-slate-900 text-xs mt-3">Active</Text>
+            <Text className="text-slate-400 text-[9px] mt-1">Platform Status</Text>
+          </View>
+          <View className="flex-1 bg-white p-6 rounded-[32px] border border-slate-50 shadow-sm items-center">
+            <Cpu size={24} color="#4C6FFF" />
+            <Text weight="bold" className="text-slate-900 text-xs mt-3">v1.2.4</Text>
+            <Text className="text-slate-400 text-[9px] mt-1">App Version</Text>
+          </View>
+        </View>
       </View>
 
       <View className="gap-4">
         <TouchableOpacity 
           onPress={editDisclosure.open}
-          className="bg-white p-6 rounded-[32px] border border-slate-50 flex-row items-center gap-5"
+          className="bg-white p-6 rounded-[32px] border border-slate-50 flex-row items-center gap-5 shadow-sm"
         >
-          <View className="w-12 h-12 bg-slate-50 rounded-2xl items-center justify-center">
+          <View className="w-12 h-12 bg-primary/5 rounded-2xl items-center justify-center">
              <User size={20} color="#4C6FFF" />
           </View>
-          <Text weight="bold" className="text-[17px] text-slate-700 flex-1">Edit Admin Details</Text>
+          <View className="flex-1">
+            <Text weight="bold" className="text-[17px] text-slate-900">Profile Settings</Text>
+            <Text className="text-slate-400 text-[11px]">Update your name and photo</Text>
+          </View>
           <ChevronRight size={18} color="#CBD5E1" />
         </TouchableOpacity>
 
@@ -440,7 +445,10 @@ export default function AdminDashboard() {
           <View className="w-12 h-12 bg-white rounded-2xl items-center justify-center">
              <LogOut size={20} color="#F43F5E" />
           </View>
-          <Text weight="bold" className="text-rose-500 text-[17px] flex-1">Secure Logout</Text>
+          <View className="flex-1">
+            <Text weight="bold" className="text-rose-500 text-[17px]">Sign Out</Text>
+            <Text className="text-rose-300 text-[11px]">Logout from your account</Text>
+          </View>
           <ChevronRight size={18} color="#F43F5E" opacity={0.3} />
         </TouchableOpacity>
       </View>
@@ -468,17 +476,17 @@ export default function AdminDashboard() {
           </TouchableOpacity>
           
           <TouchableOpacity 
-            onPress={() => setActiveTab('management')}
-            className={`w-14 h-14 rounded-full items-center justify-center ${activeTab === 'management' ? 'bg-primary' : 'transparent'}`}
-          >
-            <LayoutGrid size={22} color={activeTab === 'management' ? "white" : "#64748B"} />
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
             onPress={() => setActiveTab('analytics')}
             className={`w-14 h-14 rounded-full items-center justify-center ${activeTab === 'analytics' ? 'bg-primary' : 'transparent'}`}
           >
             <BarChart3 size={22} color={activeTab === 'analytics' ? "white" : "#64748B"} />
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            onPress={() => setActiveTab('management')}
+            className={`w-14 h-14 rounded-full items-center justify-center ${activeTab === 'management' ? 'bg-primary' : 'transparent'}`}
+          >
+            <LayoutGrid size={22} color={activeTab === 'management' ? "white" : "#64748B"} />
           </TouchableOpacity>
 
           <TouchableOpacity 
@@ -492,17 +500,17 @@ export default function AdminDashboard() {
 
       <AppModal visible={editDisclosure.isOpen} onClose={editDisclosure.close} title="Edit Profile">
         <View className="mt-4">
-          <Input label="Admin Name" value={name} onChangeText={setName} />
+          <Input label="Full Name" value={name} onChangeText={setName} />
           <Button title="Save Changes" className="mt-6 rounded-full" onPress={handleUpdateProfile} loading={updating} />
         </View>
       </AppModal>
 
       <AppModal visible={logoutDisclosure.isOpen} onClose={logoutDisclosure.close} title="Sign Out">
         <View className="mt-4 items-center">
-          <Text className="text-slate-500 text-center mb-8">Are you sure you want to exit the Command Center?</Text>
+          <Text className="text-slate-500 text-center mb-8">Are you sure you want to sign out?</Text>
           <View className="flex-row gap-4 w-full">
             <Button title="Cancel" variant="outline" className="flex-1 rounded-2xl" onPress={logoutDisclosure.close} />
-            <Button title="Logout" variant="destructive" className="flex-1 rounded-2xl" onPress={handleLogout} />
+            <Button title="Sign Out" variant="destructive" className="flex-1 rounded-2xl" onPress={handleLogout} />
           </View>
         </View>
       </AppModal>
