@@ -1,6 +1,6 @@
 # Vesta - Home Service Application
 
-Vesta is a mobile application platform for home services, built using React Native and the Expo SDK. This project implements a modular architecture with a focus on type safety, scalable UI components, and integrated Firebase services.
+Vesta is a mobile application platform for home services, built using React Native and the Expo SDK. This project implements a modular architecture with a focus on type safety and scalable UI components.
 
 ---
 
@@ -23,13 +23,7 @@ npm install --legacy-peer-deps
 ```
 
 ### 3. Environment Configuration
-Environment variables are managed through a `.env` file in the root directory. 
-Reference `.env.example` for the required configuration keys.
-```env
-EXPO_PUBLIC_FIREBASE_API_KEY=your_key
-EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your_domain
-...
-```
+Environment variables are managed through a `.env` file in the root directory. Reference `.env.example` for the required configuration keys.
 
 ### 4. Execution
 To launch the Metro Bundler with a clean cache, execute:
@@ -45,7 +39,7 @@ npx expo start --clear
 - Framework: React Native (Expo SDK 54)
 - Routing: Expo Router (File-based)
 - Styling: NativeWind v4 (Tailwind CSS)
-- Backend: Firebase (Authentication and Firestore)
+-- Backend: (no default third-party backend configured)
 - Iconography: Lucide React Native
 
 ---
@@ -53,7 +47,7 @@ npx expo start --clear
 ## Project Architecture
 - /app: Application routing and screen implementations.
 - /components/ui: Atomic UI components (Button, Input, Text, etc.).
-- /services: Service layer for third-party integrations (Firebase).
+- /services: Service layer for third-party integrations.
 - /utils: Utility functions and style helpers.
 - /types: Global TypeScript definitions and library overrides.
 

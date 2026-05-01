@@ -14,7 +14,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // This will be replaced with Firebase Auth listener later
+  // Placeholder auth listener (no third-party auth configured)
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false);

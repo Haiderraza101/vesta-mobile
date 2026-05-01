@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "779326097876",
+    "project_id": "vesta-mobile-601ef",
+    "storage_bucket": "vesta-mobile-601ef.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:779326097876:android:aedb21b519f9ebee072e41",
+        "android_client_info": {
+          "package_name": "com.vestamobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAO4YcLqjGmJ6G8qMdp_p1pOJJt5aFXg9A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
