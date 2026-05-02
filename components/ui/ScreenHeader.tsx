@@ -52,7 +52,7 @@ export function ScreenHeader({
           className="w-[52px] h-[52px] items-center justify-center rounded-2xl bg-white shadow-lg shadow-slate-100 border border-slate-50"
         >
           <View>
-            <Bell size={22} color="#1E293B" strokeWidth={2} />
+            <Bell size={22} color="#4C6FFF" strokeWidth={2.5} />
             {hasUnread && (
               <View className="absolute top-[-2] right-[-2] w-3 h-3 bg-rose-500 rounded-full border-2 border-white" />
             )}

@@ -36,13 +36,13 @@ export default function TabLayout() {
       <Tabs.Screen
         name="categories"
         options={{
-          tabBarLabel: "Chat",
+          tabBarLabel: "Explore",
         }}
       />
       <Tabs.Screen
         name="account"
         options={{
-          tabBarLabel: "Profile",
+          tabBarLabel: "Account",
         }}
       />
     </Tabs>
