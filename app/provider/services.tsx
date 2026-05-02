@@ -12,19 +12,23 @@ import { useToast } from "../../context/ToastContext";
 import { useAuth } from "../../context/AuthContext";
 import { serviceService, Service, Category } from "../../services/serviceService";
 import { providerService } from "../../services/providerService";
-import { ArrowLeft, Plus, Edit2, Trash2, Star, Tag, Package } from "lucide-react-native";
+import { storageService } from "../../services/storageService";
+import { ArrowLeft, Plus, Edit2, Trash2, Star, Tag, Package, Camera } from "lucide-react-native";
 import { LinearGradient } from 'expo-linear-gradient';
+import { ImageSourceModal } from "../../components/ui/ImageSourceModal";
 
 export default function ProviderServicesScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { showToast } = useToast();
   const addDisclosure = useDisclosure();
+  const imageSourceDisclosure = useDisclosure();
   
   const [myServices, setMyServices] = useState<Service[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
 
   // Form State
@@ -32,6 +36,7 @@ export default function ProviderServicesScreen() {
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
+  const [image, setImage] = useState("");
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -59,7 +64,7 @@ export default function ProviderServicesScreen() {
         price: price.startsWith('$') ? price : `$${price}`,
         description,
         category,
-        image: editingService?.image || "https://images.unsplash.com/photo-1581578731548-c64695cc6952?q=80&w=800&auto=format&fit=crop",
+        image: image || "https://images.unsplash.com/photo-1581578731548-c64695cc6952?q=80&w=800&auto=format&fit=crop",
         rating: editingService?.rating || "5.0",
         reviews: editingService?.reviews || "0",
         providerId: user?.uid || ""
@@ -90,7 +95,25 @@ export default function ProviderServicesScreen() {
     setPrice(service.price.replace('$', ''));
     setDescription(service.description);
     setCategory(service.category);
+    setImage(service.image);
     addDisclosure.open();
+  };
+
+  const handleImageSelect = async (useCamera: boolean) => {
+    try {
+      const uri = await storageService.pickImage(useCamera);
+      if (uri) {
+        setUploadingImage(true);
+        const fileName = `services/${user?.uid}/${Date.now()}`;
+        const uploadUrl = await storageService.uploadImage(uri, fileName);
+        setImage(uploadUrl);
+        showToast("Image uploaded", "success");
+      }
+    } catch (error) {
+      showToast("Upload failed", "error");
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -113,6 +136,7 @@ export default function ProviderServicesScreen() {
     setPrice("");
     setDescription("");
     setCategory("");
+    setImage("");
   };
 
   if (loading) {
@@ -190,6 +214,24 @@ export default function ProviderServicesScreen() {
           title={editingService ? "Edit Service" : "Add New Service"}
         >
           <ScrollView className="mt-4" showsVerticalScrollIndicator={false}>
+            <View className="mb-8 items-center">
+               <TouchableOpacity 
+                 onPress={imageSourceDisclosure.open}
+                 className="w-full h-48 bg-slate-50 rounded-[32px] border-2 border-dashed border-slate-200 items-center justify-center overflow-hidden"
+               >
+                  {uploadingImage ? (
+                    <ActivityIndicator color="#4C6FFF" />
+                  ) : image ? (
+                    <Image source={{ uri: image }} className="w-full h-full" />
+                  ) : (
+                    <View className="items-center">
+                       <Camera size={32} color="#94A3B8" />
+                       <Text className="text-slate-400 mt-2 font-medium">Add Service Photo</Text>
+                    </View>
+                  )}
+               </TouchableOpacity>
+            </View>
+
             <Input label="Service Title" value={title} onChangeText={setTitle} placeholder="e.g. Deep Home Cleaning" />
             <Input label="Price ($)" value={price} onChangeText={setPrice} placeholder="e.g. 50" keyboardType="numeric" />
             <Input label="Description" value={description} onChangeText={setDescription} placeholder="Describe what you offer..." multiline numberOfLines={4} className="h-32 pt-4" />
@@ -215,6 +257,12 @@ export default function ProviderServicesScreen() {
             />
           </ScrollView>
         </AppModal>
+
+        <ImageSourceModal 
+          visible={imageSourceDisclosure.isOpen}
+          onClose={imageSourceDisclosure.close}
+          onSelect={handleImageSelect}
+        />
       </LinearGradient>
     </SafeAreaView>
   );
