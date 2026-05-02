@@ -9,6 +9,7 @@ import {
   deleteDoc,
   doc,
   onSnapshot,
+  updateDoc,
   FirestoreError
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -107,6 +108,16 @@ export const serviceService = {
       await deleteDoc(doc(db, 'categories', id));
     } catch (error) {
       console.error("Error deleting category:", error);
+      throw error;
+    }
+  },
+
+  updateService: async (id: string, service: Partial<Service>) => {
+    try {
+      const docRef = doc(db, 'services', id);
+      await updateDoc(docRef, service);
+    } catch (error) {
+      console.error("Error updating service:", error);
       throw error;
     }
   },

@@ -25,6 +25,7 @@ export default function ProviderServicesScreen() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [editingService, setEditingService] = useState<Service | null>(null);
 
   // Form State
   const [title, setTitle] = useState("");
@@ -45,7 +46,7 @@ export default function ProviderServicesScreen() {
     return () => unsubServices();
   }, [user?.uid]);
 
-  const handleAddService = async () => {
+  const handleSaveService = async () => {
     if (!title || !price || !description || !category) {
       showToast("Please fill all fields", "error");
       return;
@@ -53,24 +54,43 @@ export default function ProviderServicesScreen() {
 
     setSaving(true);
     try {
-      await serviceService.addService({
+      const serviceData = {
         title,
-        price: price,
+        price: price.startsWith('$') ? price : `$${price}`,
         description,
         category,
-        image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?q=80&w=800&auto=format&fit=crop", // Placeholder
-        rating: "5.0",
-        reviews: "0",
+        image: editingService?.image || "https://images.unsplash.com/photo-1581578731548-c64695cc6952?q=80&w=800&auto=format&fit=crop",
+        rating: editingService?.rating || "5.0",
+        reviews: editingService?.reviews || "0",
         providerId: user?.uid || ""
-      });
-      showToast("Service added successfully", "success");
+      };
+
+      if (editingService) {
+        // Edit existing
+        await serviceService.updateService(editingService.id, serviceData);
+        showToast("Service updated successfully", "success");
+      } else {
+        // Add new
+        await serviceService.addService(serviceData);
+        showToast("Service added successfully", "success");
+      }
+      
       addDisclosure.close();
       resetForm();
     } catch (error) {
-      showToast("Failed to add service", "error");
+      showToast("Failed to save service", "error");
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleEdit = (service: Service) => {
+    setEditingService(service);
+    setTitle(service.title);
+    setPrice(service.price.replace('$', ''));
+    setDescription(service.description);
+    setCategory(service.category);
+    addDisclosure.open();
   };
 
   const handleDelete = (id: string) => {
@@ -88,6 +108,7 @@ export default function ProviderServicesScreen() {
   };
 
   const resetForm = () => {
+    setEditingService(null);
     setTitle("");
     setPrice("");
     setDescription("");
@@ -148,7 +169,10 @@ export default function ProviderServicesScreen() {
                    <TouchableOpacity onPress={() => handleDelete(service.id)} className="w-10 h-10 bg-rose-50 rounded-xl items-center justify-center">
                       <Trash2 size={18} color="#F43F5E" />
                    </TouchableOpacity>
-                   <TouchableOpacity className="w-10 h-10 bg-white rounded-xl items-center justify-center border border-slate-100 shadow-sm">
+                   <TouchableOpacity 
+                      onPress={() => handleEdit(service)}
+                      className="w-10 h-10 bg-white rounded-xl items-center justify-center border border-slate-100 shadow-sm"
+                   >
                       <Edit2 size={18} color="#64748B" />
                    </TouchableOpacity>
                 </View>
@@ -157,7 +181,14 @@ export default function ProviderServicesScreen() {
           )}
         </ScrollView>
 
-        <AppModal visible={addDisclosure.isOpen} onClose={addDisclosure.close} title="Add New Service">
+        <AppModal 
+          visible={addDisclosure.isOpen} 
+          onClose={() => {
+            addDisclosure.close();
+            resetForm();
+          }} 
+          title={editingService ? "Edit Service" : "Add New Service"}
+        >
           <ScrollView className="mt-4" showsVerticalScrollIndicator={false}>
             <Input label="Service Title" value={title} onChangeText={setTitle} placeholder="e.g. Deep Home Cleaning" />
             <Input label="Price ($)" value={price} onChangeText={setPrice} placeholder="e.g. 50" keyboardType="numeric" />
@@ -177,9 +208,9 @@ export default function ProviderServicesScreen() {
             </View>
 
             <Button 
-              title={saving ? "Saving..." : "Create Service"} 
-              className="rounded-full h-16 shadow-xl shadow-primary/20 mb-10" 
-              onPress={handleAddService}
+              title={saving ? "Saving..." : (editingService ? "Update Service" : "Create Service")} 
+              className="rounded-full h-16 shadow-xl shadow-primary/30 mb-10" 
+              onPress={handleSaveService}
               loading={saving}
             />
           </ScrollView>
