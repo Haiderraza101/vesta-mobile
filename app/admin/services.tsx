@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { View, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert } from "react-native";
+import { View, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Text } from "../../components/ui/Text";
 import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 import { Selector } from "../../components/ui/Selector";
-import { AppModal } from "../../components/ui/AppModal";
+import { ModalLayout } from "../../components/ui/ModalLayout";
+import { LoadingState } from "../../components/ui/LoadingState";
+import { EmptyState } from "../../components/ui/EmptyState";
 import { useDisclosure } from "../../hooks/useDisclosure";
 import { useToast } from "../../context/ToastContext";
 import { serviceService, Category, Service } from "../../services/serviceService";
@@ -15,7 +17,7 @@ import { storageService } from "../../services/storageService";
 import { Price } from "../../components/ui/Price";
 import { DeleteModal } from "../../components/ui/DeleteModal";
 import { ImageSourceModal } from "../../components/ui/ImageSourceModal";
-import { ArrowLeft, Plus, Trash2, Tag, DollarSign, Image as ImageIcon, AlignLeft, Settings, Camera } from "lucide-react-native";
+import { ArrowLeft, Plus, Trash2, Tag, DollarSign, Image as ImageIcon, AlignLeft, Briefcase } from "lucide-react-native";
 
 export default function ServiceManagement() {
   const router = useRouter();
@@ -26,6 +28,7 @@ export default function ServiceManagement() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [settings, setSettings] = useState<PlatformSettings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -37,15 +40,6 @@ export default function ServiceManagement() {
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [imageUri, setImageUri] = useState<string | null>(null);
-
-  const handlePickImage = async (useCamera: boolean) => {
-    try {
-      const uri = await storageService.pickImage(useCamera);
-      if (uri) setImageUri(uri);
-    } catch (error: any) {
-      showToast(error.message, "error");
-    }
-  };
 
   const fetchData = async () => {
     try {
@@ -61,12 +55,23 @@ export default function ServiceManagement() {
       showToast("Failed to fetch data", "error");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handlePickImage = async (useCamera: boolean) => {
+    try {
+      const uri = await storageService.pickImage(useCamera);
+      if (uri) setImageUri(uri);
+      setShowPicker(false);
+    } catch (error: any) {
+      showToast(error.message, "error");
+    }
+  };
 
   const handleAddService = async () => {
     if (!title || !price || !category || !description || !imageUri) {
@@ -77,7 +82,6 @@ export default function ServiceManagement() {
     setSubmitting(true);
     try {
       const downloadUrl = await storageService.uploadImage(imageUri, 'services');
-      
       await serviceService.addService({
         title,
         price: parseFloat(price),
@@ -86,7 +90,7 @@ export default function ServiceManagement() {
         image: downloadUrl,
         rating: "5.0",
         reviews: "0",
-        providerId: "system-admin" // Admin created services are platform-wide
+        providerId: "system-admin"
       });
       showToast("Service added successfully", "success");
       setTitle("");
@@ -118,13 +122,7 @@ export default function ServiceManagement() {
     }
   };
 
-  if (loading) {
-    return (
-      <View className="flex-1 items-center justify-center bg-white">
-        <ActivityIndicator size="large" color="#4C6FFF" />
-      </View>
-    );
-  }
+  if (loading) return <LoadingState message="Syncing marketplace services..." />;
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
@@ -134,7 +132,7 @@ export default function ServiceManagement() {
         onConfirm={handleConfirmDelete}
         loading={deleting}
         title="Delete Service"
-        description="Are you sure you want to remove this service from the marketplace?"
+        description="Are you sure you want to remove this service? This action cannot be undone."
       />
       <ImageSourceModal 
         visible={showPicker}
@@ -152,63 +150,79 @@ export default function ServiceManagement() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false} className="pb-20">
-          <View className="gap-5 pb-10">
-            {services.map((service) => (
-              <View key={service.id} className="bg-slate-50 p-5 rounded-[32px] border border-slate-100 flex-row gap-5">
-                <Image source={{ uri: service.image }} className="w-20 h-20 rounded-2xl" />
-                <View className="flex-1">
-                  <Text weight="bold" className="text-base text-slate-900">{service.title}</Text>
-                  <Price amount={service.price} className="mt-1" />
-                  <View className="bg-slate-200 self-start px-2 py-0.5 rounded-full mt-2">
-                    <Text className="text-[10px] text-slate-600 font-bold uppercase">{service.category}</Text>
+        <ScrollView 
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchData(); }} colors={['#4C6FFF']} />
+          }
+        >
+          {services.length === 0 ? (
+            <EmptyState 
+              title="No services found" 
+              description="Your marketplace is empty. Create your first service listing." 
+              icon={Briefcase}
+              actionTitle="Add Service"
+              onAction={addDisclosure.open}
+            />
+          ) : (
+            <View className="gap-5 pb-10">
+              {services.map((service) => (
+                <View key={service.id} className="bg-slate-50 p-5 rounded-[32px] border border-slate-100 flex-row gap-5">
+                  <Image source={{ uri: service.image }} className="w-20 h-20 rounded-2xl" />
+                  <View className="flex-1">
+                    <Text weight="bold" className="text-base text-slate-900">{service.title}</Text>
+                    <Price amount={service.price} className="mt-1" />
+                    <View className="bg-white border border-slate-100 self-start px-2.5 py-1 rounded-full mt-2">
+                      <Text weight="bold" className="text-[10px] text-slate-400 uppercase tracking-widest">{service.category}</Text>
+                    </View>
                   </View>
+                  <TouchableOpacity 
+                    className="w-11 h-11 bg-white rounded-2xl items-center justify-center self-center border border-slate-100"
+                    onPress={() => setDeleteId(service.id)}
+                  >
+                    <Trash2 size={18} color="#64748B" />
+                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity 
-                  className="w-10 h-10 bg-rose-50 rounded-xl items-center justify-center self-center"
-                  onPress={() => setDeleteId(service.id)}
-                >
-                  <Trash2 size={18} color="#F43F5E" />
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
+              ))}
+            </View>
+          )}
         </ScrollView>
 
-        <AppModal visible={addDisclosure.isOpen} onClose={addDisclosure.close} title="New Service">
-          <ScrollView showsVerticalScrollIndicator={false} className="mt-4 max-h-[500px]">
+        <ModalLayout visible={addDisclosure.isOpen} onClose={addDisclosure.close} title="New Service">
+          <View className="mt-2">
             <Input 
               label="Service Title" 
-              placeholder="e.g. Kitchen Cleaning" 
+              placeholder="e.g. Premium Cleaning" 
               value={title} 
               onChangeText={setTitle} 
-              leftIcon={<Tag size={20} color="#94A3B8" />}
             />
-            <Input 
-              label={`Price (${settings?.currencyCode || 'USD'})`} 
-              placeholder="45" 
-              keyboardType="numeric"
-              value={price} 
-              onChangeText={setPrice} 
-              leftIcon={<DollarSign size={20} color="#94A3B8" />}
-            />
+            <View className="flex-row gap-4">
+              <View className="flex-1">
+                <Input 
+                  label={`Price (${settings?.currencyCode || 'USD'})`} 
+                  placeholder="0.00" 
+                  keyboardType="numeric"
+                  value={price} 
+                  onChangeText={setPrice} 
+                />
+              </View>
+            </View>
             <Selector 
-              label="Category"
+              label="Select Category"
               options={categories.map(c => ({ label: c.name, value: c.name }))}
               value={category}
               onSelect={setCategory}
             />
             <Input 
               label="Description" 
-              placeholder="Describe the service..." 
+              placeholder="Briefly describe the service offering..." 
               value={description} 
               onChangeText={setDescription} 
               multiline
               numberOfLines={3}
-              leftIcon={<AlignLeft size={20} color="#94A3B8" />}
             />
             
-            <View className="mt-4 mb-10">
+            <View className="mt-4">
               <Text weight="semibold" className="text-slate-700 text-sm mb-3">Service Image</Text>
               <TouchableOpacity 
                 onPress={() => setShowPicker(true)}
@@ -218,20 +232,22 @@ export default function ServiceManagement() {
                   <Image source={{ uri: imageUri }} className="w-full h-full" />
                 ) : (
                   <View className="items-center">
-                    <ImageIcon size={32} color="#94A3B8" />
-                    <Text className="text-slate-400 mt-2">Pick from Gallery or Camera</Text>
+                    <View className="w-16 h-16 bg-white rounded-full items-center justify-center shadow-sm mb-3">
+                      <ImageIcon size={28} color="#4C6FFF" />
+                    </View>
+                    <Text weight="medium" className="text-slate-400">Add Service Photo</Text>
                   </View>
                 )}
               </TouchableOpacity>
             </View>
             <Button 
-              title={submitting ? "Adding..." : "Create Service"} 
+              title={submitting ? "Publishing..." : "Create Service"} 
               onPress={handleAddService} 
               loading={submitting}
-              className="mt-6 rounded-full h-16 mb-10"
+              className="mt-10 rounded-full h-16"
             />
-          </ScrollView>
-        </AppModal>
+          </View>
+        </ModalLayout>
       </View>
     </SafeAreaView>
   );

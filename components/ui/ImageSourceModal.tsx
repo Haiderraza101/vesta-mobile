@@ -45,8 +45,8 @@ export function ImageSourceModal({ visible, onClose, onSelect }: ImageSourceModa
               onPress={() => { onSelect(true); onClose(); }}
               className="flex-1 bg-slate-50 p-8 rounded-[32px] items-center border border-slate-100"
             >
-              <View className="w-16 h-16 bg-amber-50 rounded-2xl items-center justify-center mb-4">
-                <Camera size={32} color="#F59E0B" />
+              <View className="w-16 h-16 bg-slate-100 rounded-2xl items-center justify-center mb-4">
+                <Camera size={32} color="#4C6FFF" />
               </View>
               <Text weight="semibold" className="text-slate-900">Camera</Text>
             </TouchableOpacity>

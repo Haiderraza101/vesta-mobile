@@ -6,9 +6,10 @@ import { Text } from "../../components/ui/Text";
 import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 import { Selector } from "../../components/ui/Selector";
+import { LoadingState } from "../../components/ui/LoadingState";
 import { useToast } from "../../context/ToastContext";
 import { configService, PlatformSettings } from "../../services/configService";
-import { ArrowLeft, Globe, DollarSign, Briefcase, Percent } from "lucide-react-native";
+import { ArrowLeft, Globe, DollarSign, Percent } from "lucide-react-native";
 
 export default function PlatformSettingsScreen() {
   const router = useRouter();
@@ -78,13 +79,7 @@ export default function PlatformSettingsScreen() {
     }
   };
 
-  if (loading) {
-    return (
-      <View className="flex-1 items-center justify-center bg-white">
-        <ActivityIndicator size="large" color="#4C6FFF" />
-      </View>
-    );
-  }
+  if (loading) return <LoadingState message="Configuring platform..." />;
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
@@ -99,17 +94,17 @@ export default function PlatformSettingsScreen() {
 
         <ScrollView showsVerticalScrollIndicator={false} className="pb-20">
           <View className="gap-6">
-            <View className="bg-slate-50 p-6 rounded-[32px] border border-slate-100">
+            <View className="bg-slate-50 p-7 rounded-[40px] border border-slate-100 shadow-sm shadow-slate-100">
               <Text weight="bold" className="text-slate-900 mb-6 text-lg">General</Text>
               <Input 
                 label="Marketplace Name" 
                 value={platformName} 
                 onChangeText={setPlatformName}
-                leftIcon={<Globe size={20} color="#94A3B8" />}
+                leftIcon={<Globe size={20} color="#4C6FFF" />}
               />
             </View>
 
-            <View className="bg-slate-50 p-6 rounded-[32px] border border-slate-100">
+            <View className="bg-slate-50 p-7 rounded-[40px] border border-slate-100 shadow-sm shadow-slate-100">
               <Text weight="bold" className="text-slate-900 mb-6 text-lg">Localization & Finance</Text>
               <View className="gap-5">
                 <Selector 
@@ -118,19 +113,21 @@ export default function PlatformSettingsScreen() {
                   value={currencyCode} 
                   onSelect={handleCurrencySelect}
                 />
-                <View className="flex-row items-center gap-2 bg-white p-4 rounded-2xl border border-slate-100">
-                  <Text className="text-slate-400 text-sm">Active Symbol:</Text>
-                  <Text weight="bold" className="text-primary text-lg">{currencySymbol}</Text>
+                <View className="flex-row items-center justify-between bg-white p-5 rounded-3xl border border-slate-100">
+                  <Text weight="medium" className="text-slate-400">Active Symbol</Text>
+                  <View className="bg-primary/5 px-4 py-2 rounded-xl border border-primary/10">
+                    <Text weight="bold" className="text-primary text-lg">{currencySymbol}</Text>
+                  </View>
                 </View>
               </View>
-              <View className="mt-5">
+              <View className="mt-6">
                 <Input 
                   label="Service Tax Rate (%)" 
                   placeholder="0" 
                   keyboardType="numeric"
                   value={taxRate} 
                   onChangeText={setTaxRate}
-                  leftIcon={<Percent size={20} color="#94A3B8" />}
+                  leftIcon={<Percent size={20} color="#4C6FFF" />}
                 />
               </View>
             </View>
@@ -141,7 +138,7 @@ export default function PlatformSettingsScreen() {
             onPress={handleSave} 
             loading={saving}
             size="lg"
-            className="mt-10 rounded-full h-16 shadow-lg shadow-primary/20 mb-10"
+            className="mt-10 rounded-full h-16 shadow-xl shadow-primary/20 mb-10"
           />
         </ScrollView>
       </View>

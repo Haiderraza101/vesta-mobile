@@ -119,6 +119,7 @@ export default function HomeDashboard() {
         <ScrollView 
           className="flex-1" 
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 160 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4C6FFF" />}
         >
           <ScreenHeader 

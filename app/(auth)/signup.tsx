@@ -43,7 +43,7 @@ export default function SignUp() {
 
       const timer = setTimeout(() => {
         router.replace("/(tabs)");
-      }, 2500);
+      }, 800);
       return () => clearTimeout(timer);
     }
   }, [success]);

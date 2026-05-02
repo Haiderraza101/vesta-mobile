@@ -62,7 +62,11 @@ export default function AccountScreen() {
       <LinearGradient colors={['#F0F7FF', '#FFFFFF']} className="flex-1">
         <ScreenHeader title="My Account" showProfile={false} />
 
-        <ScrollView className="flex-1 px-6 pt-6" showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          className="flex-1 px-6 pt-6" 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 160 }}
+        >
           <Card className="p-7 mb-10 flex-row items-center gap-7 bg-white border-white shadow-xl shadow-slate-200">
             <View className="relative">
               <View className="w-[88px] h-[88px] rounded-[32px] overflow-hidden border-4 border-slate-50 shadow-sm bg-primary/10 items-center justify-center">
