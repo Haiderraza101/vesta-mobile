@@ -38,6 +38,10 @@ export default function BookServiceScreen() {
 
   const handleConfirm = async () => {
     if (!user?.uid) return;
+    if (!address.trim()) {
+      showToast("Please enter a service location", "error");
+      return;
+    }
     
     setLoading(true);
     try {
@@ -54,7 +58,11 @@ export default function BookServiceScreen() {
       });
 
       showToast("Booking confirmed successfully!", "success");
-      router.replace("/(tabs)/bookings");
+      
+      const timer = setTimeout(() => {
+        router.replace("/(tabs)/bookings");
+      }, 800);
+      return () => clearTimeout(timer);
     } catch (error) {
       showToast("Failed to create booking", "error");
     } finally {
