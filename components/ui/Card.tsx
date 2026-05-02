@@ -1,27 +1,41 @@
 import React from 'react';
-import { View, TouchableOpacity, ViewProps, TouchableOpacityProps, StyleSheet } from 'react-native';
-import { Text } from './Text';
+import { View, TouchableOpacity, Animated } from 'react-native';
 
 interface CardProps {
   children: React.ReactNode;
   onPress?: () => void;
-  variant?: 'elevated' | 'outline' | 'flat';
+  variant?: 'elevated' | 'outline' | 'flat' | 'glass';
   className?: string;
   style?: any;
 }
 
-export function Card({ children, onPress, variant = 'elevated', className = '', style, ...props }: CardProps) {
-  const baseStyles = "rounded-[28px] overflow-hidden";
+export function Card({ children, onPress, variant = 'elevated', className = '', style }: CardProps) {
+  const baseStyles = "rounded-[32px] overflow-hidden";
+  
   const variants = {
-    elevated: "bg-white shadow-sm border border-slate-50",
-    outline: "bg-transparent border border-slate-100",
+    elevated: "bg-white border border-white",
+    outline: "bg-transparent border-[1.5px] border-slate-100",
     flat: "bg-slate-50",
+    glass: "bg-white/70",
+  };
+
+  const getShadow = () => {
+    if (variant === 'elevated') {
+      return {
+        shadowColor: '#4C6FFF',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.05,
+        shadowRadius: 20,
+        elevation: 2,
+      };
+    }
+    return {};
   };
 
   const content = (
     <View 
       className={`${baseStyles} ${variants[variant]} ${className}`}
-      style={style}
+      style={[getShadow(), style]}
     >
       {children}
     </View>
@@ -30,7 +44,7 @@ export function Card({ children, onPress, variant = 'elevated', className = '', 
   if (onPress) {
     return (
       <TouchableOpacity 
-        activeOpacity={0.8} 
+        activeOpacity={0.9} 
         onPress={onPress}
       >
         {content}

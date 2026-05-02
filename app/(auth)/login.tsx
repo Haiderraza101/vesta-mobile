@@ -47,7 +47,7 @@ export default function Login() {
           className="px-8"
         >
           <TouchableOpacity 
-            onPress={() => router.canGoBack() ? router.back() : router.replace("/onboarding")}
+            onPress={() => router.canGoBack() ? router.back() : router.replace("/(auth)/signup")}
             className="mt-4 mb-10 h-12 w-12 items-center justify-center border border-slate-100 rounded-2xl shadow-sm bg-white"
           >
             <ArrowLeft size={22} color="#1E293B" strokeWidth={2.5} />
@@ -93,7 +93,7 @@ export default function Login() {
             
             <View className="flex-row items-center justify-center mt-10 gap-2">
               <Text className="text-slate-500">Don't have an account?</Text>
-              <Link href="/(auth)/signup" asChild>
+              <Link href="/(auth)/role-selection" asChild>
                 <TouchableOpacity>
                   <Text weight="bold" className="text-primary uppercase tracking-widest text-sm">Sign Up</Text>
                 </TouchableOpacity>

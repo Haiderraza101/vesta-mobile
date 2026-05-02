@@ -41,7 +41,7 @@ export default function SplashScreen() {
         if (user) {
           router.replace("/(tabs)");
         } else {
-          router.replace("/onboarding");
+          router.replace("/(auth)/login");
         }
       }, 2500);
       return () => clearTimeout(timer);

@@ -2,12 +2,14 @@ import {
   doc, 
   setDoc, 
   getDoc, 
+  getDocs,
+  collection,
   updateDoc, 
   serverTimestamp 
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
-export type UserRole = 'customer' | 'provider';
+export type UserRole = 'customer' | 'provider' | 'admin';
 
 export interface UserProfile {
   uid: string;
@@ -16,6 +18,7 @@ export interface UserProfile {
   role: UserRole;
   createdAt: any;
   phoneNumber?: string;
+  avatar?: string;
 }
 
 export const userService = {
@@ -55,4 +58,29 @@ export const userService = {
       throw error;
     }
   },
+
+  getAllUsers: async (page: number = 1, limit: number = 10): Promise<UserProfile[]> => {
+    try {
+      // In production, we'd use Firestore limit() and startAfter()
+      // For now, we simulate the interface
+      const snapshot = await getDocs(collection(db, 'users'));
+      const allUsers = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
+      
+      const start = (page - 1) * limit;
+      return allUsers.slice(start, start + limit);
+    } catch (error) {
+      console.error("Error getting all users:", error);
+      throw error;
+    }
+  },
+
+  updateUserRole: async (uid: string, role: UserRole) => {
+    try {
+      const docRef = doc(db, 'users', uid);
+      await updateDoc(docRef, { role });
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      throw error;
+    }
+  }
 };

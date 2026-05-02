@@ -37,7 +37,6 @@ export default function RootLayout() {
           <ToastProvider>
             <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
               <Stack.Screen name="splash" />
-              <Stack.Screen name="onboarding" />
               <Stack.Screen name="(auth)" options={{ animation: 'slide_from_bottom' }} />
               <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
               <Stack.Screen name="book-service" options={{ animation: 'slide_from_bottom' }} />
