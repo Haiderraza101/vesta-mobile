@@ -44,6 +44,15 @@ export default function BookingsScreen() {
     return () => unsubscribe && unsubscribe();
   }, [user?.uid, userProfile?.role]);
 
+  const handleUpdateStatus = async (bookingId: string, status: any) => {
+    try {
+      await bookingService.updateBookingStatus(bookingId, status);
+      showToast(`Booking ${status} successfully`, "success");
+    } catch (error) {
+      showToast("Failed to update status", "error");
+    }
+  };
+
   const onRefresh = () => {
     setRefreshing(true);
     // Real-time listener will handle it, but we can set refreshing false after a short delay
@@ -201,25 +210,49 @@ export default function BookingsScreen() {
                 </View>
               </View>
               
-              <View className="flex-row gap-4">
-                <Button 
-                  title="Message Support" 
-                  variant="outline" 
-                  iconLeft={<MessageSquare size={20} color="#4C6FFF" />}
-                  className="flex-1 h-16 rounded-[28px]" 
-                  onPress={() => {
-                    detailDisclosure.close();
-                    showToast("Chat system coming soon", "info");
-                  }} 
-                />
-                <Button 
-                  title="Need Help?" 
-                  className="flex-1 h-16 rounded-[28px]" 
-                  onPress={() => {
-                    detailDisclosure.close();
-                    showToast("Support ticket created", "success");
-                  }} 
-                />
+              <View className="flex-row gap-4 mt-10">
+                {userProfile?.role === 'provider' && selectedBooking.status === 'pending' && (
+                  <Button 
+                    title="Confirm Booking" 
+                    className="flex-1 h-16 rounded-[28px] shadow-lg shadow-primary/20" 
+                    onPress={() => {
+                      handleUpdateStatus(selectedBooking.id!, 'confirmed');
+                      detailDisclosure.close();
+                    }} 
+                  />
+                )}
+                {userProfile?.role === 'provider' && selectedBooking.status === 'confirmed' && (
+                  <Button 
+                    title="Mark Completed" 
+                    className="flex-1 h-16 rounded-[28px] bg-emerald-500 shadow-lg shadow-emerald-500/20" 
+                    onPress={() => {
+                      handleUpdateStatus(selectedBooking.id!, 'completed');
+                      detailDisclosure.close();
+                    }} 
+                  />
+                )}
+                {userProfile?.role === 'customer' && (
+                  <>
+                    <Button 
+                      title="Message Support" 
+                      variant="outline" 
+                      iconLeft={<MessageSquare size={20} color="#4C6FFF" />}
+                      className="flex-1 h-16 rounded-[28px]" 
+                      onPress={() => {
+                        detailDisclosure.close();
+                        showToast("Chat system coming soon", "info");
+                      }} 
+                    />
+                    <Button 
+                      title="Need Help?" 
+                      className="flex-1 h-16 rounded-[28px]" 
+                      onPress={() => {
+                        detailDisclosure.close();
+                        showToast("Support ticket created", "success");
+                      }} 
+                    />
+                  </>
+                )}
               </View>
             </View>
           )}
