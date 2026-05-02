@@ -1,11 +1,11 @@
-import { 
-  collection, 
-  addDoc, 
-  query, 
-  where, 
-  getDocs, 
-  doc, 
-  updateDoc, 
+import {
+  collection,
+  addDoc,
+  query,
+  where,
+  getDocs,
+  doc,
+  updateDoc,
   onSnapshot,
   orderBy,
   serverTimestamp,
@@ -13,6 +13,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { UserRole } from './userService';
+import { notificationService } from './notificationService';
 
 export type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
 
@@ -39,6 +40,14 @@ export const bookingService = {
         status: 'pending',
         createdAt: serverTimestamp(),
       });
+
+      await notificationService.sendNotification({
+        userId: booking.providerId,
+        title: "New Booking Request",
+        message: `You have a new booking for ${booking.serviceName}`,
+        type: 'booking'
+      });
+
       return docRef.id;
     } catch (error) {
       console.error("Error creating booking:", error);
@@ -49,7 +58,7 @@ export const bookingService = {
   getCustomerBookings: async (customerId: string): Promise<Booking[]> => {
     try {
       const q = query(
-        collection(db, 'bookings'), 
+        collection(db, 'bookings'),
         where('customerId', '==', customerId)
       );
       const snapshot = await getDocs(q);
@@ -63,7 +72,7 @@ export const bookingService = {
   getProviderBookings: async (providerId: string): Promise<Booking[]> => {
     try {
       const q = query(
-        collection(db, 'bookings'), 
+        collection(db, 'bookings'),
         where('providerId', '==', providerId)
       );
       const snapshot = await getDocs(q);
@@ -94,7 +103,7 @@ export const bookingService = {
         where(role === 'provider' ? 'providerId' : 'customerId', '==', userId)
       );
     }
-    
+
     return onSnapshot(q, (snapshot) => {
       const bookings = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
       callback(bookings);

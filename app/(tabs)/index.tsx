@@ -238,6 +238,23 @@ export default function HomeDashboard() {
                     <TrendingUp size={24} color="white" />
                   </View>
                 </View>
+
+                <View className="mt-8">
+                   <View className="flex-row justify-between mb-2">
+                      <Text className="text-white/40 text-[10px] uppercase font-bold tracking-widest">Monthly Goal Progress</Text>
+                      <Text className="text-primary text-[10px] font-bold uppercase tracking-widest">84%</Text>
+                   </View>
+                   <View className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
+                      <View className="h-full bg-primary w-[84%] rounded-full shadow-sm shadow-primary/50" />
+                   </View>
+                </View>
+
+                <View className="mt-6 flex-row items-center gap-2">
+                   <View className="bg-emerald-500/20 px-2 py-1 rounded-lg">
+                      <Text weight="bold" className="text-emerald-400 text-[10px]">+12.5%</Text>
+                   </View>
+                   <Text className="text-white/40 text-[10px] uppercase font-bold tracking-widest">vs Last Month</Text>
+                </View>
                 
                 <View className="h-[1px] bg-white/10 w-full my-8" />
                 

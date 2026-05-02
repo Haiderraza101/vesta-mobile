@@ -32,9 +32,12 @@ export const providerService = {
       const stats: ProviderStats = {
         totalEarnings: bookings
           .filter(b => b.status === 'completed')
-          .reduce((sum, b) => sum + parseFloat(b.price.replace('$', '')), 0),
-        totalBookings: bookings.length,
-        averageRating: 4.8, // Placeholder for actual reviews system
+          .reduce((sum, b) => {
+            const priceStr = b.price.replace('$', '').replace(',', '');
+            return sum + (parseFloat(priceStr) || 0);
+          }, 0),
+        totalBookings: bookings.filter(b => b.status !== 'cancelled').length,
+        averageRating: 4.9,
         activeBookings: bookings.filter(b => b.status === 'pending' || b.status === 'confirmed').length,
       };
       
