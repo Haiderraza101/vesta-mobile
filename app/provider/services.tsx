@@ -194,6 +194,12 @@ export default function ProviderServicesScreen() {
                       <Trash2 size={18} color="#F43F5E" />
                    </TouchableOpacity>
                    <TouchableOpacity 
+                      onPress={() => router.push(`/service/${service.id}`)}
+                      className="w-10 h-10 bg-white rounded-xl items-center justify-center border border-slate-100 shadow-sm"
+                   >
+                      <ArrowLeft size={18} color="#64748B" style={{ transform: [{ rotate: '135deg' }] }} />
+                   </TouchableOpacity>
+                   <TouchableOpacity 
                       onPress={() => handleEdit(service)}
                       className="w-10 h-10 bg-white rounded-xl items-center justify-center border border-slate-100 shadow-sm"
                    >
