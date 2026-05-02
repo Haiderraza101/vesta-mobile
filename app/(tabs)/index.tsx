@@ -265,14 +265,41 @@ export default function HomeDashboard() {
                    </View>
                  ) : (
                    incomingBookings.filter(b => b.status === 'pending' || b.status === 'confirmed').slice(0, 3).map((booking) => (
-                     <Card key={booking.id} className="p-5 bg-white border-slate-50 shadow-sm flex-row items-center gap-5" style={{ borderRadius: 28 }}>
-                        <Image source={{ uri: booking.serviceImage }} className="w-16 h-16 rounded-2xl" />
-                        <View className="flex-1">
-                           <Text weight="bold" className="text-slate-900 text-base" numberOfLines={1}>{booking.serviceName}</Text>
-                           <Text className="text-slate-500 text-xs mt-1">{booking.date} • {booking.time}</Text>
+                     <Card key={booking.id} className="p-5 bg-white border-slate-50 shadow-sm" style={{ borderRadius: 32 }}>
+                        <View className="flex-row items-center gap-5 mb-5">
+                           <Image source={{ uri: booking.serviceImage }} className="w-16 h-16 rounded-2xl" />
+                           <View className="flex-1">
+                              <Text weight="bold" className="text-slate-900 text-base" numberOfLines={1}>{booking.serviceName}</Text>
+                              <Text className="text-slate-500 text-xs mt-1">{booking.date} • {booking.time}</Text>
+                           </View>
+                           <View className={`px-3 py-1.5 rounded-xl ${booking.status === 'confirmed' ? 'bg-blue-50' : 'bg-amber-50'}`}>
+                              <Text weight="bold" className={`text-[10px] uppercase tracking-wider ${booking.status === 'confirmed' ? 'text-blue-500' : 'text-amber-500'}`}>{booking.status}</Text>
+                           </View>
                         </View>
-                        <View className={`px-3 py-1.5 rounded-xl ${booking.status === 'confirmed' ? 'bg-blue-50' : 'bg-amber-50'}`}>
-                           <Text weight="bold" className={`text-[10px] uppercase tracking-wider ${booking.status === 'confirmed' ? 'text-blue-500' : 'text-amber-500'}`}>{booking.status}</Text>
+                        
+                        <View className="flex-row gap-2 pt-4 border-t border-slate-50">
+                           {booking.status === 'pending' && (
+                             <TouchableOpacity 
+                               onPress={() => handleUpdateStatus(booking.id!, 'confirmed')}
+                               className="flex-1 bg-primary/10 h-11 rounded-2xl items-center justify-center border border-primary/10"
+                             >
+                                <Text weight="bold" className="text-primary text-[10px] uppercase tracking-widest">Confirm</Text>
+                             </TouchableOpacity>
+                           )}
+                           {booking.status === 'confirmed' && (
+                             <TouchableOpacity 
+                               onPress={() => handleUpdateStatus(booking.id!, 'completed')}
+                               className="flex-1 bg-emerald-500 h-11 rounded-2xl items-center justify-center shadow-lg shadow-emerald-500/20"
+                             >
+                                <Text weight="bold" className="text-white text-[10px] uppercase tracking-widest">Complete</Text>
+                             </TouchableOpacity>
+                           )}
+                           <TouchableOpacity 
+                              onPress={() => handleUpdateStatus(booking.id!, 'cancelled')}
+                              className="flex-1 bg-slate-50 h-11 rounded-2xl items-center justify-center border border-slate-100"
+                           >
+                              <Text weight="bold" className="text-slate-400 text-[10px] uppercase tracking-widest">Cancel</Text>
+                           </TouchableOpacity>
                         </View>
                      </Card>
                    ))
