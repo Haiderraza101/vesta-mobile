@@ -7,7 +7,9 @@ import {
   limit,
   addDoc,
   deleteDoc,
-  doc
+  doc,
+  onSnapshot,
+  FirestoreError
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
@@ -20,7 +22,7 @@ export interface Category {
 export interface Service {
   id: string;
   title: string;
-  price: number;
+  price: string;
   rating: string;
   reviews: string;
   description: string;
@@ -40,6 +42,16 @@ export const serviceService = {
     }
   },
 
+  subscribeToCategories: (callback: (categories: Category[]) => void) => {
+    const q = query(collection(db, 'categories'), orderBy('name'));
+    return onSnapshot(q, (snapshot) => {
+      const categories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
+      callback(categories);
+    }, (error: FirestoreError) => {
+      console.error("Categories listener error:", error);
+    });
+  },
+
   getPopularServices: async (): Promise<Service[]> => {
     try {
       const q = query(collection(db, 'services'), limit(10));
@@ -49,6 +61,16 @@ export const serviceService = {
       console.error("Error getting popular services:", error);
       throw error;
     }
+  },
+
+  subscribeToServices: (callback: (services: Service[]) => void) => {
+    const q = query(collection(db, 'services'));
+    return onSnapshot(q, (snapshot) => {
+      const services = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Service));
+      callback(services);
+    }, (error: FirestoreError) => {
+      console.error("Services listener error:", error);
+    });
   },
 
   getServicesByCategory: async (categoryName: string): Promise<Service[]> => {
