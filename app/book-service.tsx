@@ -1,42 +1,25 @@
 import React, { useState } from "react";
+<<<<<<< Updated upstream
 import { View, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+=======
+import { View, Text, ScrollView, Image, TextInput, TouchableOpacity } from "react-native";
+>>>>>>> Stashed changes
 import { useRouter } from "expo-router";
-import { Text } from "../components/ui/Text";
-import { Button } from "../components/ui/Button";
-import { Selector } from "../components/ui/Selector";
-import { useToast } from "../context/ToastContext";
-import { cn } from "../utils/utils";
-import { ArrowLeft, Calendar as CalendarIcon, Clock } from "lucide-react-native";
-
-const TIME_SLOTS = ["09:00 AM", "10:00 AM", "11:00 AM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM"];
-const DATES = [
-  { day: "Mon", date: "28" },
-  { day: "Tue", date: "29" },
-  { day: "Wed", date: "30" },
-  { day: "Thu", date: "01" },
-  { day: "Fri", date: "02" },
-];
+import { ArrowRight, MapPin, Star, Verified } from "lucide-react-native";
+import AppHeader from "../components/ui/AppHeader";
+import { Colors, Shadows } from "../src/constants/theme";
+import { PROVIDERS, MOCK_USER } from "../src/constants/mockData";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function BookServiceScreen() {
   const router = useRouter();
-  const { showToast } = useToast();
-  const [selectedDate, setSelectedDate] = useState("28");
-  const [selectedTime, setSelectedTime] = useState("10:00 AM");
-  const [serviceType, setServiceType] = useState("");
-
-  const SERVICE_OPTIONS = [
-    { label: "General Maintenance", value: "general" },
-    { label: "Deep Cleaning", value: "deep" },
-    { label: "Emergency Repair", value: "emergency" },
-  ];
-
-  const handleConfirm = () => {
-    showToast("Booking confirmed successfully!", "success");
-    router.replace("/(tabs)/bookings");
-  };
+  const provider = PROVIDERS[0];
+  const [description, setDescription] = useState("");
+  const [address, setAddress] = useState("1234 Sycamore Lane, Suite 2B");
 
   return (
+<<<<<<< Updated upstream
     <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
       <View className="flex-1 px-6 pt-6">
         <View className="flex-row items-center gap-4 mb-10">
@@ -45,80 +28,160 @@ export default function BookServiceScreen() {
           </TouchableOpacity>
           <Text variant="h2" weight="bold">Book Service</Text>
         </View>
+=======
+    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+      <AppHeader showBack avatarUrl={MOCK_USER.avatarUrl} />
+>>>>>>> Stashed changes
 
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <View className="mb-10">
-            <Text variant="h4" weight="bold" className="mb-4 uppercase tracking-widest text-xs text-slate-400">Step 1: Select Service</Text>
-            <Selector 
-              label="Service Type"
-              options={SERVICE_OPTIONS}
-              value={serviceType}
-              onSelect={setServiceType}
-              placeholder="Choose service type..."
-            />
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 120 }}>
+        <View className="px-4 pt-4">
+          {/* Progress bar */}
+          <View className="mb-8">
+            <View className="flex-row justify-between items-center mb-2">
+              <Text style={{ fontFamily: "Inter-SemiBold", fontSize: 14, letterSpacing: 0.28 }} className="text-on-surface">
+                Request Details
+              </Text>
+              <Text style={{ fontFamily: "Inter-Medium", fontSize: 12, letterSpacing: 0.48 }} className="text-on-surface-variant">
+                Step 2 of 3
+              </Text>
+            </View>
+            <View className="w-full h-2 bg-surface-variant rounded-full overflow-hidden">
+              <View className="h-full bg-secondary rounded-full" style={{ width: "66%" }} />
+            </View>
           </View>
 
-          <View className="mb-10">
-            <View className="flex-row items-center gap-2 mb-4">
-              <CalendarIcon size={16} color="#64748B" />
-              <Text variant="h4" weight="bold" className="uppercase tracking-widest text-xs text-slate-400">Step 2: Select Date</Text>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-6 px-6">
-              <View className="flex-row gap-4">
-                {DATES.map((d) => (
-                  <TouchableOpacity
-                    key={d.date}
-                    onPress={() => setSelectedDate(d.date)}
-                    className={cn(
-                      "w-20 h-24 items-center justify-center border rounded-[20px]",
-                      selectedDate === d.date ? "bg-primary border-primary" : "bg-white border-slate-100 shadow-sm"
-                    )}
-                  >
-                    <Text weight="bold" className={cn("text-[10px] uppercase mb-1", selectedDate === d.date ? "text-white/60" : "text-slate-400")}>
-                      {d.day}
-                    </Text>
-                    <Text variant="h2" weight="bold" className={selectedDate === d.date ? "text-white" : "text-slate-900"}>
-                      {d.date}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+          {/* Section title */}
+          <Text style={{ fontFamily: "Manrope-SemiBold", fontSize: 24, lineHeight: 31, letterSpacing: -0.24 }} className="text-primary mb-6">
+            Describe your needs
+          </Text>
+
+          {/* Provider summary card */}
+          <View className="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 mb-6" style={Shadows.sm}>
+            <Text style={{ fontFamily: "Inter-Medium", fontSize: 11, letterSpacing: 1 }} className="text-on-surface-variant uppercase mb-2">
+              Selected Provider
+            </Text>
+            <View className="flex-row items-center gap-3">
+              <View className="relative">
+                <Image source={{ uri: provider.avatarUrl }} className="w-14 h-14 rounded-full border border-outline-variant" />
+                <View className="absolute -bottom-1 -right-1 bg-surface-container-lowest rounded-full p-0.5 border border-outline-variant">
+                  <Verified size={12} color={Colors.secondary} />
+                </View>
               </View>
-            </ScrollView>
-          </View>
-
-          <View className="mb-10">
-            <View className="flex-row items-center gap-2 mb-4">
-              <Clock size={16} color="#64748B" />
-              <Text variant="h4" weight="bold" className="uppercase tracking-widest text-xs text-slate-400">Step 3: Select Time</Text>
-            </View>
-            <View className="flex-row flex-wrap gap-3">
-              {TIME_SLOTS.map((slot) => (
-                <TouchableOpacity
-                  key={slot}
-                  onPress={() => setSelectedTime(slot)}
-                  className={cn(
-                    "px-6 py-4 border rounded-[20px]",
-                    selectedTime === slot ? "bg-primary border-primary" : "bg-white border-slate-100 shadow-sm"
-                  )}
-                >
-                  <Text weight="bold" className={selectedTime === slot ? "text-white" : "text-slate-700"}>
-                    {slot}
+              <View className="flex-1">
+                <Text style={{ fontFamily: "Manrope-SemiBold", fontSize: 20 }} className="text-primary">
+                  {provider.name}
+                </Text>
+                <View className="flex-row items-center gap-1 mt-0.5">
+                  <Star size={14} fill={Colors.onSurface} color={Colors.onSurface} />
+                  <Text style={{ fontFamily: "Inter-Medium", fontSize: 12 }} className="text-on-surface">
+                    {provider.rating}
                   </Text>
-                </TouchableOpacity>
-              ))}
+                  <Text style={{ fontFamily: "Inter", fontSize: 13 }} className="text-on-surface-variant">
+                    · {provider.specialty}
+                  </Text>
+                </View>
+              </View>
+              <View className="items-end">
+                <Text style={{ fontFamily: "Inter-SemiBold", fontSize: 14 }} className="text-primary">
+                  ${provider.rate}/hr
+                </Text>
+                <Text style={{ fontFamily: "Inter", fontSize: 13 }} className="text-on-surface-variant">
+                  Est. rate
+                </Text>
+              </View>
             </View>
           </View>
-        </ScrollView>
 
-        <View className="py-8 bg-white border-t border-slate-50 -mx-6 px-6">
-          <Button 
-            title="Confirm Booking" 
-            size="lg"
-            onPress={handleConfirm}
-            disabled={!serviceType}
-            className="rounded-full shadow-lg shadow-primary/20"
-          />
+          {/* Form */}
+          <View className="gap-6">
+            {/* Description */}
+            <View>
+              <Text style={{ fontFamily: "Inter-SemiBold", fontSize: 14, letterSpacing: 0.28 }} className="text-on-surface mb-2">
+                Describe your problem in detail
+              </Text>
+              <TextInput
+                className="bg-surface-container-lowest border border-outline-variant rounded-lg p-4 text-on-surface"
+                style={{ fontFamily: "Inter", fontSize: 16, lineHeight: 24, height: 130, textAlignVertical: "top" }}
+                placeholder="Please provide specific details about the issue..."
+                placeholderTextColor={`${Colors.onSurfaceVariant}80`}
+                multiline
+                value={description}
+                onChangeText={setDescription}
+                maxLength={500}
+              />
+              <View className="flex-row justify-between items-center mt-1">
+                <Text style={{ fontFamily: "Inter", fontSize: 13 }} className="text-on-surface-variant">
+                  Be as specific as possible.
+                </Text>
+                <Text style={{ fontFamily: "Inter", fontSize: 13 }} className="text-on-surface-variant">
+                  {description.length} / 500
+                </Text>
+              </View>
+            </View>
+
+            {/* Address */}
+            <View>
+              <Text style={{ fontFamily: "Inter-SemiBold", fontSize: 14, letterSpacing: 0.28 }} className="text-on-surface mb-2">
+                Service Address
+              </Text>
+              <View className="flex-row items-center bg-surface-container-lowest border border-outline-variant rounded-lg px-4 py-3">
+                <MapPin size={20} color={Colors.onSurfaceVariant} />
+                <TextInput
+                  className="flex-1 ml-3 text-on-surface"
+                  style={{ fontFamily: "Inter", fontSize: 16 }}
+                  placeholder="Enter full address"
+                  placeholderTextColor={`${Colors.onSurfaceVariant}80`}
+                  value={address}
+                  onChangeText={setAddress}
+                />
+              </View>
+            </View>
+
+            {/* Price breakdown */}
+            <View className="bg-surface-container-low border border-outline-variant rounded-xl p-4 mt-2">
+              <Text style={{ fontFamily: "Manrope-SemiBold", fontSize: 20 }} className="text-primary mb-4">
+                Estimated Price Summary
+              </Text>
+              <View className="gap-2">
+                <View className="flex-row justify-between">
+                  <Text style={{ fontFamily: "Inter", fontSize: 16 }} className="text-on-surface-variant">Estimated Labor (2 hours)</Text>
+                  <Text style={{ fontFamily: "Inter", fontSize: 16 }} className="text-on-surface">$170.00</Text>
+                </View>
+                <View className="flex-row justify-between">
+                  <Text style={{ fontFamily: "Inter", fontSize: 16 }} className="text-on-surface-variant">Service Call Fee</Text>
+                  <Text style={{ fontFamily: "Inter", fontSize: 16 }} className="text-on-surface">$45.00</Text>
+                </View>
+                <View className="flex-row justify-between">
+                  <Text style={{ fontFamily: "Inter", fontSize: 16 }} className="text-on-surface-variant">Platform Trust Fee</Text>
+                  <Text style={{ fontFamily: "Inter", fontSize: 16 }} className="text-on-surface">$12.50</Text>
+                </View>
+              </View>
+              <View className="h-px bg-outline-variant my-4" />
+              <View className="flex-row justify-between items-center">
+                <View>
+                  <Text style={{ fontFamily: "Manrope-SemiBold", fontSize: 20 }} className="text-primary">Total Estimate</Text>
+                  <Text style={{ fontFamily: "Inter", fontSize: 13 }} className="text-on-surface-variant mt-1">Final price may vary based on actual work.</Text>
+                </View>
+                <Text style={{ fontFamily: "Manrope-SemiBold", fontSize: 24, lineHeight: 31 }} className="text-primary">$227.50</Text>
+              </View>
+            </View>
+          </View>
         </View>
+      </ScrollView>
+
+      {/* Sticky bottom CTA */}
+      <View className="absolute bottom-0 left-0 right-0 bg-surface-container-lowest border-t border-outline-variant p-4" style={Shadows.md}>
+        <TouchableOpacity
+          onPress={() => router.push("/(tabs)/bookings")}
+          className="w-full bg-secondary py-4 rounded-xl flex-row items-center justify-center gap-2"
+          activeOpacity={0.85}
+        >
+          <Text style={{ fontFamily: "Inter-SemiBold", fontSize: 14, color: Colors.onSecondary }}>Submit Request</Text>
+          <ArrowRight size={18} color={Colors.onSecondary} />
+        </TouchableOpacity>
+        <Text style={{ fontFamily: "Inter-Medium", fontSize: 12, letterSpacing: 0.48 }} className="text-on-surface-variant text-center mt-1">
+          You won't be charged until the provider accepts.
+        </Text>
       </View>
     </SafeAreaView>
   );
