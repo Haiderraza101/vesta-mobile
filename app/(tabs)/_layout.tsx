@@ -1,20 +1,12 @@
-<<<<<<< Updated upstream
-import React from "react";
-import { Tabs } from "expo-router";
-import { CustomTabBar } from "../../components/ui/CustomTabBar";
-
-export default function TabLayout() {
-=======
 import { Tabs } from "expo-router";
 import { Home, Search, Calendar, User, Briefcase } from "lucide-react-native";
 import { Colors } from "../../src/constants/theme";
 import { useAuth } from "../../context/AuthContext";
 
 export default function TabLayout() {
-  const { user } = useAuth();
-  const isProvider = user?.role === "provider";
+  const { profile } = useAuth();
+  const isProvider = profile?.role === "provider";
 
->>>>>>> Stashed changes
   return (
     <Tabs
       screenOptions={{

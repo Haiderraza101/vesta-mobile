@@ -1,18 +1,47 @@
 /**
- * Firestore Database Service
- * Handles all CRUD operations for users, providers, and bookings collections
+ * Firebase Database Service Layer
+ * ─────────────────────────────────────────────────────────────────
+ * Direct Booking Model with Order Lifecycle State Machine:
+ *
+ *   pending → accepted → en_route → in_progress → completed
+ *        ↘ declined                                     ↗
+ *         (end)          cancelled ←───────────────────┘
+ *                        (customer or provider can cancel
+ *                         before in_progress)
  */
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 
-// ─── Types ───────────────────────────────────────────────
-export type UserRole = "customer" | "provider";
+// ─── Order Status Type (State Machine) ────────────────
+export type OrderStatus =
+  | "pending"
+  | "accepted"
+  | "en_route"
+  | "in_progress"
+  | "completed"
+  | "cancelled"
+  | "declined";
 
+/** End states — no further transitions allowed */
+const END_STATES: OrderStatus[] = ["completed", "cancelled", "declined"];
+
+/** Valid state transitions */
+const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+  pending: ["accepted", "declined", "cancelled"],
+  accepted: ["en_route", "cancelled"],
+  en_route: ["in_progress", "cancelled"],
+  in_progress: ["completed"],
+  completed: [],
+  cancelled: [],
+  declined: [],
+};
+
+// ─── Types ────────────────────────────────────────────
 export interface UserProfile {
   uid: string;
   email: string;
   fullName: string;
-  role: UserRole;
+  role: "customer" | "provider";
   createdAt: any;
 }
 
@@ -21,220 +50,335 @@ export interface ProviderProfile {
   fullName: string;
   email: string;
   serviceCategory: string;
+  specialty: string;
   hourlyRate: number;
   rating: number;
   jobsCompleted: number;
   experience: number;
-  isAvailable: boolean;
   about: string;
   skills: string[];
+  isAvailable: boolean;
   avatarUrl: string;
 }
 
 export interface Booking {
-  id?: string;
+  id: string;
   customerId: string;
+  customerName: string;
   providerId: string;
   providerName: string;
   serviceCategory: string;
-  status: "pending" | "accepted" | "completed" | "cancelled";
+  title: string;
+  description: string;
+  customerMessage: string;
+  status: OrderStatus;
   scheduledDate: any;
-  notes: string;
   address: string;
-  estimatedPrice: number;
+  notes: string;
+  price: number;
   createdAt: any;
+  updatedAt: any;
 }
 
-// ─── Auth + User Registration ────────────────────────────
+// ─── Auth Operations ──────────────────────────────────
+
 export const registerUser = async (
   email: string,
   password: string,
-  fullName: string,
-  role: UserRole
+  fullName: string
 ) => {
-  // 1. Create the user in Firebase Auth
-  const userCredential = await auth().createUserWithEmailAndPassword(email, password);
-  const uid = userCredential.user.uid;
+  const credential = await auth().createUserWithEmailAndPassword(email, password);
+  const uid = credential.user.uid;
 
-  // 2. Save their profile in the 'users' collection
   await firestore().collection("users").doc(uid).set({
     uid,
     email,
     fullName,
-    role,
+    role: "",
     createdAt: firestore.FieldValue.serverTimestamp(),
   });
 
-  // 3. If provider, also create a providers document
-  if (role === "provider") {
-    await firestore().collection("providers").doc(uid).set({
-      providerId: uid,
-      fullName,
-      email,
-      serviceCategory: "",
-      hourlyRate: 0,
-      rating: 0,
-      jobsCompleted: 0,
-      experience: 0,
-      isAvailable: true,
-      about: "",
-      skills: [],
-      avatarUrl: "",
-    });
-  }
-
-  return userCredential.user;
+  return credential.user;
 };
 
 export const loginUser = async (email: string, password: string) => {
-  const userCredential = await auth().signInWithEmailAndPassword(email, password);
-  return userCredential.user;
+  const credential = await auth().signInWithEmailAndPassword(email, password);
+  return credential.user;
 };
 
 export const logoutUser = async () => {
   await auth().signOut();
 };
 
-// ─── User Profile ────────────────────────────────────────
+// ─── User Profile Operations ──────────────────────────
+
 export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
   const doc = await firestore().collection("users").doc(uid).get();
-  if (doc.exists) {
-    return doc.data() as UserProfile;
-  }
-  return null;
+  return !!doc.exists ? (doc.data() as UserProfile) : null;
 };
 
-export const updateUserRole = async (uid: string, role: UserRole, serviceCategory?: string) => {
+export const setUserRole = async (
+  uid: string,
+  role: "customer" | "provider",
+  providerData?: {
+    serviceCategory: string;
+    specialty: string;
+    hourlyRate: number;
+  }
+) => {
   await firestore().collection("users").doc(uid).update({ role });
 
-  // If switching to provider, create provider profile if it doesn't exist
-  if (role === "provider") {
-    const provDoc = await firestore().collection("providers").doc(uid).get();
-    if (!provDoc.exists) {
-      const userDoc = await firestore().collection("users").doc(uid).get();
-      const userData = userDoc.data();
-      await firestore().collection("providers").doc(uid).set({
-        providerId: uid,
-        fullName: userData?.fullName || "",
-        email: userData?.email || "",
-        serviceCategory: serviceCategory || "",
-        hourlyRate: 50,
-        rating: 0,
-        jobsCompleted: 0,
-        experience: 0,
-        isAvailable: true,
-        about: "",
-        skills: [],
-        avatarUrl: "",
-      });
-    } else if (serviceCategory) {
-      await firestore().collection("providers").doc(uid).update({ serviceCategory });
-    }
+  if (role === "provider" && providerData) {
+    const userDoc = await firestore().collection("users").doc(uid).get();
+    const userData = userDoc.data();
+
+    await firestore().collection("providers").doc(uid).set({
+      providerId: uid,
+      fullName: userData?.fullName || "",
+      email: userData?.email || "",
+      serviceCategory: providerData.serviceCategory,
+      specialty: providerData.specialty,
+      hourlyRate: providerData.hourlyRate,
+      rating: 0,
+      jobsCompleted: 0,
+      experience: 0,
+      about: "",
+      skills: [],
+      isAvailable: true,
+      avatarUrl: "",
+    });
   }
 };
 
-export const updateUserProfile = async (uid: string, data: Partial<UserProfile>) => {
-  await firestore().collection("users").doc(uid).update(data);
+export const updateUserName = async (uid: string, fullName: string) => {
+  await firestore().collection("users").doc(uid).update({ fullName });
+  const providerDoc = await firestore().collection("providers").doc(uid).get();
+  if (!!providerDoc.exists) {
+    await firestore().collection("providers").doc(uid).update({ fullName });
+  }
 };
 
-// ─── Provider Operations ─────────────────────────────────
-export const getProviders = async (): Promise<ProviderProfile[]> => {
-  const snapshot = await firestore()
+// ─── Provider Operations ──────────────────────────────
+
+export const getProviders = async (category?: string): Promise<ProviderProfile[]> => {
+  let query = firestore()
     .collection("providers")
-    .where("isAvailable", "==", true)
-    .get();
+    .where("isAvailable", "==", true);
 
-  return snapshot.docs.map((doc) => ({ ...doc.data() } as ProviderProfile));
-};
+  if (category) {
+    query = query.where("serviceCategory", "==", category);
+  }
 
-export const getProvidersByCategory = async (category: string): Promise<ProviderProfile[]> => {
-  const snapshot = await firestore()
-    .collection("providers")
-    .where("serviceCategory", "==", category)
-    .where("isAvailable", "==", true)
-    .get();
-
-  return snapshot.docs.map((doc) => ({ ...doc.data() } as ProviderProfile));
+  const snapshot = await query.get();
+  return snapshot.docs.map((doc) => ({ ...doc.data(), providerId: doc.id } as ProviderProfile));
 };
 
 export const getProviderById = async (providerId: string): Promise<ProviderProfile | null> => {
   const doc = await firestore().collection("providers").doc(providerId).get();
-  if (doc.exists) {
-    return doc.data() as ProviderProfile;
-  }
-  return null;
+  return !!doc.exists ? ({ ...doc.data(), providerId: doc.id } as ProviderProfile) : null;
 };
 
-export const updateProviderAvailability = async (providerId: string, isAvailable: boolean) => {
+export const toggleProviderAvailability = async (providerId: string, isAvailable: boolean) => {
   await firestore().collection("providers").doc(providerId).update({ isAvailable });
 };
 
-export const updateProviderProfile = async (providerId: string, data: Partial<ProviderProfile>) => {
-  await firestore().collection("providers").doc(providerId).update(data);
-};
+// ─── Booking / Order Operations ───────────────────────
 
-// ─── Booking Operations ──────────────────────────────────
-export const createBooking = async (
-  providerId: string,
-  providerName: string,
-  serviceCategory: string,
-  scheduledDate: Date,
-  notes: string,
-  address: string,
-  estimatedPrice: number
-) => {
-  const customerId = auth().currentUser?.uid;
-  if (!customerId) throw new Error("User must be logged in to create a booking");
+/**
+ * Create a new booking (Direct Booking Model).
+ * The customer selects a SPECIFIC provider → status starts as "pending".
+ */
+export const createBooking = async (data: {
+  providerId: string;
+  providerName: string;
+  serviceCategory: string;
+  title: string;
+  description: string;
+  customerMessage: string;
+  address: string;
+  notes: string;
+  price: number;
+  scheduledDate: Date;
+}) => {
+  const currentUser = auth().currentUser;
+  if (!currentUser) throw new Error("User must be logged in");
 
-  const docRef = await firestore().collection("bookings").add({
-    customerId,
-    providerId,
-    providerName,
-    serviceCategory,
-    status: "pending",
-    scheduledDate: firestore.Timestamp.fromDate(scheduledDate),
-    notes,
-    address,
-    estimatedPrice,
+  const userDoc = await firestore().collection("users").doc(currentUser.uid).get();
+  const userData = userDoc.data();
+
+  const bookingRef = await firestore().collection("bookings").add({
+    customerId: currentUser.uid,
+    customerName: userData?.fullName || "Customer",
+    providerId: data.providerId,
+    providerName: data.providerName,
+    serviceCategory: data.serviceCategory,
+    title: data.title,
+    description: data.description,
+    customerMessage: data.customerMessage,
+    status: "pending" as OrderStatus,
+    scheduledDate: firestore.Timestamp.fromDate(data.scheduledDate),
+    address: data.address,
+    notes: data.notes,
+    price: data.price,
     createdAt: firestore.FieldValue.serverTimestamp(),
+    updatedAt: firestore.FieldValue.serverTimestamp(),
   });
 
-  return docRef.id;
+  return bookingRef.id;
 };
 
-export const getBookingsForCustomer = async (customerId: string): Promise<Booking[]> => {
+/**
+ * State-machine-aware status updater.
+ * Validates the transition is legal before writing to Firestore.
+ */
+export const updateOrderStatus = async (bookingId: string, newStatus: OrderStatus) => {
+  const doc = await firestore().collection("bookings").doc(bookingId).get();
+  if (!doc.exists) throw new Error("Booking not found");
+
+  const currentStatus = doc.data()?.status as OrderStatus;
+
+  if (END_STATES.includes(currentStatus)) {
+    throw new Error(`Cannot transition from end state "${currentStatus}"`);
+  }
+
+  const allowed = VALID_TRANSITIONS[currentStatus];
+  if (!allowed || !allowed.includes(newStatus)) {
+    throw new Error(`Invalid transition: "${currentStatus}" → "${newStatus}"`);
+  }
+
+  const updateData: any = {
+    status: newStatus,
+    updatedAt: firestore.FieldValue.serverTimestamp(),
+  };
+
+  // When a job is completed, increment the provider's jobsCompleted count
+  if (newStatus === "completed") {
+    const bookingData = doc.data();
+    if (bookingData?.providerId) {
+      const providerRef = firestore().collection("providers").doc(bookingData.providerId);
+      await providerRef.update({
+        jobsCompleted: firestore.FieldValue.increment(1),
+      });
+    }
+  }
+
+  await firestore().collection("bookings").doc(bookingId).update(updateData);
+};
+
+/** Get a single booking by ID */
+export const getBookingById = async (bookingId: string): Promise<Booking | null> => {
+  const doc = await firestore().collection("bookings").doc(bookingId).get();
+  return !!doc.exists ? ({ id: doc.id, ...doc.data() } as Booking) : null;
+};
+
+// ─── Real-time Subscriptions (onSnapshot) ─────────────
+
+/**
+ * PROVIDER: Subscribe to jobs sent DIRECTLY to this provider.
+ * Strict filtering: providerId == current user's uid.
+ */
+export const subscribeToProviderJobs = (
+  providerId: string,
+  onUpdate: (jobs: Booking[]) => void
+) => {
+  return firestore()
+    .collection("bookings")
+    .where("providerId", "==", providerId)
+    .orderBy("createdAt", "desc")
+    .onSnapshot(
+      (snapshot) => {
+        const jobs = snapshot?.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Booking[];
+        onUpdate(jobs || []);
+      },
+      (error) => {
+        console.error("Provider jobs subscription error:", error);
+        onUpdate([]);
+      }
+    );
+};
+
+/**
+ * CUSTOMER: Subscribe to their own order history.
+ * Strict filtering: customerId == current user's uid.
+ */
+export const subscribeToCustomerOrders = (
+  customerId: string,
+  onUpdate: (orders: Booking[]) => void
+) => {
+  return firestore()
+    .collection("bookings")
+    .where("customerId", "==", customerId)
+    .orderBy("createdAt", "desc")
+    .onSnapshot(
+      (snapshot) => {
+        const orders = snapshot?.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Booking[];
+        onUpdate(orders || []);
+      },
+      (error) => {
+        console.error("Customer orders subscription error:", error);
+        onUpdate([]);
+      }
+    );
+};
+
+/**
+ * Subscribe to a SINGLE booking for live status updates.
+ * Used by both customer order tracker and provider active job.
+ */
+export const subscribeToBooking = (
+  bookingId: string,
+  onUpdate: (booking: Booking | null) => void
+) => {
+  return firestore()
+    .collection("bookings")
+    .doc(bookingId)
+    .onSnapshot(
+      (doc) => {
+        if (!!doc.exists) {
+          onUpdate({ id: doc.id, ...doc.data() } as Booking);
+        } else {
+          onUpdate(null);
+        }
+      },
+      (error) => {
+        console.error("Booking subscription error:", error);
+        onUpdate(null);
+      }
+    );
+};
+
+// ─── Legacy one-shot queries (kept for backward compat) ─
+
+export const getCustomerBookings = async (customerId: string): Promise<Booking[]> => {
   const snapshot = await firestore()
     .collection("bookings")
     .where("customerId", "==", customerId)
     .orderBy("createdAt", "desc")
     .get();
-
   return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Booking));
 };
 
-export const getBookingsForProvider = async (providerId: string): Promise<Booking[]> => {
-  const snapshot = await firestore()
+export const getProviderBookings = async (
+  providerId: string,
+  status?: string
+): Promise<Booking[]> => {
+  let query = firestore()
     .collection("bookings")
-    .where("providerId", "==", providerId)
-    .orderBy("createdAt", "desc")
-    .get();
+    .where("providerId", "==", providerId);
 
+  if (status) {
+    query = query.where("status", "==", status);
+  }
+
+  const snapshot = await query.orderBy("createdAt", "desc").get();
   return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Booking));
 };
 
-export const getPendingBookings = async (): Promise<Booking[]> => {
-  const snapshot = await firestore()
-    .collection("bookings")
-    .where("status", "==", "pending")
-    .orderBy("createdAt", "desc")
-    .get();
-
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Booking));
-};
-
-export const updateBookingStatus = async (
-  bookingId: string,
-  status: "pending" | "accepted" | "completed" | "cancelled"
-) => {
-  await firestore().collection("bookings").doc(bookingId).update({ status });
-};
+/** @deprecated Use updateOrderStatus instead — it validates transitions */
+export const updateBookingStatus = updateOrderStatus;

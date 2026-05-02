@@ -1,21 +1,87 @@
-import React, { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
+import { useRouter } from "expo-router";
 import AppHeader from "../../components/ui/AppHeader";
 import BookingCard from "../../components/ui/BookingCard";
+import { useAuth } from "../../context/AuthContext";
+import {
+  Booking,
+  OrderStatus,
+  subscribeToCustomerOrders,
+  subscribeToProviderJobs,
+  updateOrderStatus,
+} from "../../services/db";
 import { Colors, Shadows } from "../../src/constants/theme";
-import { MOCK_USER, BOOKINGS } from "../../src/constants/mockData";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function BookingsScreen() {
-  const [activeTab, setActiveTab] = useState<"active" | "past">("active");
+const ACTIVE_STATES: OrderStatus[] = ["pending", "accepted", "en_route", "in_progress"];
+const ENDED_STATES: OrderStatus[] = ["completed", "cancelled", "declined"];
 
-  const filteredBookings = activeTab === "active"
-    ? BOOKINGS.filter((b) => b.status !== "completed")
-    : BOOKINGS.filter((b) => b.status === "completed");
+export default function BookingsScreen() {
+  const router = useRouter();
+  const { user, profile } = useAuth();
+  const [activeTab, setActiveTab] = useState<"active" | "past">("active");
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const isProvider = profile?.role === "provider";
+
+  // Real-time subscription
+  useEffect(() => {
+    if (!user) return;
+
+    setLoading(true);
+    const unsubscribe = isProvider
+      ? subscribeToProviderJobs(user.uid, (jobs) => {
+          setBookings(jobs);
+          setLoading(false);
+        })
+      : subscribeToCustomerOrders(user.uid, (orders) => {
+          setBookings(orders);
+          setLoading(false);
+        });
+
+    return () => unsubscribe();
+  }, [user, isProvider]);
+
+  const filteredBookings =
+    activeTab === "active"
+      ? bookings.filter((b) => ACTIVE_STATES.includes(b.status))
+      : bookings.filter((b) => ENDED_STATES.includes(b.status));
+
+  const handleCardPress = (booking: Booking) => {
+    if (isProvider) {
+      // Provider: navigate to job detail for pending, active-job for others
+      if (booking.status === "pending") {
+        router.push({ pathname: "/job-detail", params: { id: booking.id } });
+      } else if (ACTIVE_STATES.includes(booking.status)) {
+        router.push({ pathname: "/active-job", params: { id: booking.id } });
+      }
+    }
+  };
+
+  const handleCustomerCancel = async (bookingId: string, status: OrderStatus) => {
+    if (["pending", "accepted", "en_route"].includes(status)) {
+      Alert.alert("Cancel Order", "Are you sure you want to cancel this order?", [
+        { text: "No" },
+        {
+          text: "Yes, Cancel",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await updateOrderStatus(bookingId, "cancelled");
+            } catch (e: any) {
+              Alert.alert("Error", e.message || "Failed to cancel order.");
+            }
+          },
+        },
+      ]);
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
-      <AppHeader showBack avatarUrl={MOCK_USER.avatarUrl} />
+      <AppHeader showBack />
 
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 24 }}>
         <View className="px-4 pt-4 gap-4">
@@ -23,10 +89,10 @@ export default function BookingsScreen() {
           <View className="gap-4">
             <View>
               <Text style={{ fontFamily: "Manrope-Bold", fontSize: 32, lineHeight: 38, letterSpacing: -0.64 }} className="text-on-surface mb-1">
-                My Bookings
+                {isProvider ? "My Jobs" : "My Orders"}
               </Text>
               <Text style={{ fontFamily: "Inter", fontSize: 16, lineHeight: 24 }} className="text-on-surface-variant">
-                Manage your service requests and view history.
+                {isProvider ? "Manage your accepted jobs and history." : "Track your service requests in real-time."}
               </Text>
             </View>
 
@@ -54,28 +120,47 @@ export default function BookingsScreen() {
           </View>
 
           {/* Booking cards */}
-          <View className="gap-4">
-            {filteredBookings.map((booking) => (
-              <BookingCard
-                key={booking.id}
-                serviceType={booking.serviceType}
-                serviceIcon={booking.serviceIcon}
-                title={booking.title}
-                description={booking.description}
-                status={booking.status}
-                address={booking.address}
-                timeAgo={booking.timeAgo}
-                provider={booking.provider}
-              />
-            ))}
-            {filteredBookings.length === 0 && (
-              <View className="items-center py-12">
-                <Text style={{ fontFamily: "Inter", fontSize: 16 }} className="text-on-surface-variant">
-                  No {activeTab} bookings yet.
-                </Text>
-              </View>
-            )}
-          </View>
+          {loading ? (
+            <View className="py-12 items-center">
+              <ActivityIndicator size="large" color={Colors.secondary} />
+            </View>
+          ) : (
+            <View className="gap-4">
+              {filteredBookings.map((booking) => (
+                <View key={booking.id}>
+                  <BookingCard
+                    serviceType={booking.serviceCategory}
+                    serviceIcon="sparkles"
+                    title={booking.title}
+                    description={booking.customerMessage || booking.description}
+                    status={booking.status}
+                    address={booking.address}
+                    timeAgo=""
+                    provider={null}
+                    onPress={() => handleCardPress(booking)}
+                  />
+                  {/* Customer cancel button for cancellable states */}
+                  {!isProvider && ["pending", "accepted", "en_route"].includes(booking.status) && (
+                    <TouchableOpacity
+                      onPress={() => handleCustomerCancel(booking.id, booking.status)}
+                      className="mt-2 py-2 rounded-lg border border-error items-center"
+                    >
+                      <Text style={{ fontFamily: "Inter-SemiBold", fontSize: 13, color: Colors.error }}>
+                        Cancel Order
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ))}
+              {filteredBookings.length === 0 && (
+                <View className="items-center py-12">
+                  <Text style={{ fontFamily: "Inter", fontSize: 16 }} className="text-on-surface-variant">
+                    No {activeTab} {isProvider ? "jobs" : "orders"} yet.
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, Image, TouchableOpacity } from "react-native";
 import { MapPin, Clock, CheckCheck, MessageCircle, Sparkles, Zap, Wrench } from "lucide-react-native";
 import StatusBadge from "./StatusBadge";
+import { OrderStatus } from "../../services/db";
 import { Colors, Shadows } from "../../src/constants/theme";
 
 const ICON_MAP = {
@@ -15,7 +16,7 @@ interface BookingCardProps {
   serviceIcon: keyof typeof ICON_MAP;
   title: string;
   description: string;
-  status: "pending" | "accepted" | "completed";
+  status: OrderStatus;
   address: string;
   timeAgo: string;
   provider?: {
@@ -38,16 +39,16 @@ export default function BookingCard({
   onPress,
 }: BookingCardProps) {
   const IconComponent = ICON_MAP[serviceIcon] || Sparkles;
-  const isAccepted = status === "accepted";
-  const isCompleted = status === "completed";
+  const isActive = ["accepted", "en_route", "in_progress"].includes(status);
+  const isEnded = ["completed", "cancelled", "declined"].includes(status);
 
   return (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.9}
       className={`bg-surface-container-lowest rounded-xl p-4 gap-3 ${
-        isAccepted ? "border-secondary border" : "border border-outline-variant"
-      } ${isCompleted ? "opacity-80" : ""}`}
+        isActive ? "border-secondary border" : "border border-outline-variant"
+      } ${isEnded ? "opacity-80" : ""}`}
       style={Shadows.md}
     >
       {/* Header: service type + status */}
@@ -101,7 +102,7 @@ export default function BookingCard({
         </View>
         <View className="flex-row justify-between items-center">
           <View className="flex-row items-center gap-2">
-            {isCompleted ? (
+            {isEnded ? (
               <CheckCheck size={16} color={Colors.onSurfaceVariant} />
             ) : (
               <Clock size={16} color={Colors.onSurfaceVariant} />
@@ -112,7 +113,7 @@ export default function BookingCard({
           </View>
           <TouchableOpacity>
             <Text style={{ fontFamily: "Inter-SemiBold", fontSize: 13, color: Colors.secondary }}>
-              {status === "pending" ? "Edit" : status === "completed" ? "Receipt" : "Details"}
+              {status === "pending" ? "Edit" : isEnded ? "Receipt" : "Details"}
             </Text>
           </TouchableOpacity>
         </View>

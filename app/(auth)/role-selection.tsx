@@ -1,34 +1,51 @@
-<<<<<<< Updated upstream
-import { RoleSelectionView } from "../../src/views/auth/RoleSelectionView";
-export default RoleSelectionView;
-=======
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { User, Wrench, CheckCircle, ArrowRight, Sparkles, Zap } from "lucide-react-native";
 import ChipSelector from "../../components/ui/ChipSelector";
 import PrimaryButton from "../../components/ui/PrimaryButton";
 import { useAuth } from "../../context/AuthContext";
+import { setUserRole } from "../../services/db";
 import { Colors } from "../../src/constants/theme";
 import { TRADES } from "../../src/constants/mockData";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const TRADE_ICONS: Record<string, React.ReactNode> = {
-  sparkles: <Sparkles size={14} color="currentColor" />,
-  zap: <Zap size={14} color="currentColor" />,
-  wrench: <Wrench size={14} color="currentColor" />,
+const TRADE_MAP: Record<string, { serviceCategory: string; specialty: string; hourlyRate: number }> = {
+  t1: { serviceCategory: "cleaning", specialty: "Professional Cleaner", hourlyRate: 65 },
+  t2: { serviceCategory: "electrical", specialty: "Licensed Electrician", hourlyRate: 85 },
+  t3: { serviceCategory: "plumbing", specialty: "Master Plumber", hourlyRate: 75 },
 };
 
 export default function RoleSelectionScreen() {
   const router = useRouter();
-  const { setRole } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const [selectedRole, setSelectedRole] = useState<"customer" | "provider" | null>(null);
   const [selectedTrade, setSelectedTrade] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleContinue = () => {
-    if (selectedRole) {
-      setRole(selectedRole);
+  const handleContinue = async () => {
+    if (!selectedRole || !user) return;
+
+    if (selectedRole === "provider" && !selectedTrade) {
+      Alert.alert("Select a Trade", "Please select your primary trade to continue.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const providerData =
+        selectedRole === "provider" && selectedTrade
+          ? TRADE_MAP[selectedTrade]
+          : undefined;
+
+      await setUserRole(user.uid, selectedRole, providerData);
+      await refreshProfile(); // Re-fetch profile so AuthContext has the updated role
       router.replace("/(tabs)");
+    } catch (error) {
+      console.error("Role selection error:", error);
+      Alert.alert("Error", "Failed to set role. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -123,10 +140,10 @@ export default function RoleSelectionScreen() {
           iconRight={<ArrowRight size={18} color={Colors.onSecondary} />}
           onPress={handleContinue}
           disabled={!selectedRole}
+          loading={loading}
           style={{ backgroundColor: Colors.blue600 }}
         />
       </ScrollView>
     </SafeAreaView>
   );
 }
->>>>>>> Stashed changes

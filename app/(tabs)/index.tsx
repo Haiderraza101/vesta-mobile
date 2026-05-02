@@ -290,6 +290,7 @@ function CustomerDashboard() {
    ROLE-AWARE HOME TAB
    ──────────────────────────────────────────── */
 export default function HomeTab() {
-  const { user } = useAuth();
-  return user?.role === "provider" ? <ProviderDashboard /> : <CustomerDashboard />;
+  const { profile } = useAuth();
+  return profile?.role === "provider" ? <ProviderDashboard /> : <CustomerDashboard />;
 }
+

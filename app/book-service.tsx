@@ -1,37 +1,105 @@
-import React, { useState } from "react";
-<<<<<<< Updated upstream
-import { View, ScrollView, TouchableOpacity } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-=======
-import { View, Text, ScrollView, Image, TextInput, TouchableOpacity } from "react-native";
->>>>>>> Stashed changes
-import { useRouter } from "expo-router";
+import React, { useState, useEffect } from "react";
+import { View, Text, ScrollView, Image, TextInput, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowRight, MapPin, Star, Verified } from "lucide-react-native";
 import AppHeader from "../components/ui/AppHeader";
+import { useAuth } from "../context/AuthContext";
+import { getProviderById, createBooking, ProviderProfile } from "../services/db";
 import { Colors, Shadows } from "../src/constants/theme";
-import { PROVIDERS, MOCK_USER } from "../src/constants/mockData";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function BookServiceScreen() {
   const router = useRouter();
-  const provider = PROVIDERS[0];
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { user } = useAuth();
+  const [provider, setProvider] = useState<ProviderProfile | null>(null);
   const [description, setDescription] = useState("");
-  const [address, setAddress] = useState("1234 Sycamore Lane, Suite 2B");
+  const [address, setAddress] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    loadProvider();
+  }, [id]);
+
+  const loadProvider = async () => {
+    if (!id) return;
+    try {
+      const data = await getProviderById(id);
+      setProvider(data);
+    } catch (error) {
+      console.error("Error loading provider:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!provider || !user) return;
+    if (!description.trim()) {
+      Alert.alert("Error", "Please describe your problem.");
+      return;
+    }
+    if (!address.trim()) {
+      Alert.alert("Error", "Please enter your service address.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const laborCost = provider.hourlyRate * 2;
+      const serviceFee = 45;
+      const platformFee = 12.5;
+      const totalPrice = laborCost + serviceFee + platformFee;
+
+      await createBooking({
+        providerId: provider.providerId,
+        providerName: provider.fullName,
+        serviceCategory: provider.serviceCategory,
+        title: `${provider.specialty} Service`,
+        description: description.trim(),
+        customerMessage: description.trim(),
+        address: address.trim(),
+        notes: "",
+        price: totalPrice,
+        scheduledDate: new Date(),
+      });
+
+      Alert.alert("Success!", "Your booking request has been submitted.", [
+        { text: "View Bookings", onPress: () => router.replace("/(tabs)/bookings") },
+      ]);
+    } catch (error) {
+      console.error("Booking error:", error);
+      Alert.alert("Error", "Failed to create booking. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView className="flex-1 bg-background items-center justify-center">
+        <ActivityIndicator size="large" color={Colors.secondary} />
+      </SafeAreaView>
+    );
+  }
+
+  if (!provider) {
+    return (
+      <SafeAreaView className="flex-1 bg-background items-center justify-center">
+        <Text style={{ fontFamily: "Inter", fontSize: 16 }} className="text-on-surface-variant">Provider not found.</Text>
+      </SafeAreaView>
+    );
+  }
+
+  const laborCost = provider.hourlyRate * 2;
+  const serviceFee = 45;
+  const platformFee = 12.5;
+  const totalPrice = laborCost + serviceFee + platformFee;
 
   return (
-<<<<<<< Updated upstream
-    <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
-      <View className="flex-1 px-6 pt-6">
-        <View className="flex-row items-center gap-4 mb-10">
-          <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center -ml-2">
-            <ArrowLeft size={24} color="#0F172A" />
-          </TouchableOpacity>
-          <Text variant="h2" weight="bold">Book Service</Text>
-        </View>
-=======
     <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
-      <AppHeader showBack avatarUrl={MOCK_USER.avatarUrl} />
->>>>>>> Stashed changes
+      <AppHeader showBack />
 
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 120 }}>
         <View className="px-4 pt-4">
@@ -62,14 +130,18 @@ export default function BookServiceScreen() {
             </Text>
             <View className="flex-row items-center gap-3">
               <View className="relative">
-                <Image source={{ uri: provider.avatarUrl }} className="w-14 h-14 rounded-full border border-outline-variant" />
+                <View className="w-14 h-14 rounded-full bg-secondary-fixed items-center justify-center border border-outline-variant">
+                  <Text style={{ fontFamily: "Manrope-Bold", fontSize: 20, color: Colors.secondary }}>
+                    {provider.fullName.charAt(0)}
+                  </Text>
+                </View>
                 <View className="absolute -bottom-1 -right-1 bg-surface-container-lowest rounded-full p-0.5 border border-outline-variant">
                   <Verified size={12} color={Colors.secondary} />
                 </View>
               </View>
               <View className="flex-1">
                 <Text style={{ fontFamily: "Manrope-SemiBold", fontSize: 20 }} className="text-primary">
-                  {provider.name}
+                  {provider.fullName}
                 </Text>
                 <View className="flex-row items-center gap-1 mt-0.5">
                   <Star size={14} fill={Colors.onSurface} color={Colors.onSurface} />
@@ -83,7 +155,7 @@ export default function BookServiceScreen() {
               </View>
               <View className="items-end">
                 <Text style={{ fontFamily: "Inter-SemiBold", fontSize: 14 }} className="text-primary">
-                  ${provider.rate}/hr
+                  ${provider.hourlyRate}/hr
                 </Text>
                 <Text style={{ fontFamily: "Inter", fontSize: 13 }} className="text-on-surface-variant">
                   Est. rate
@@ -145,15 +217,15 @@ export default function BookServiceScreen() {
               <View className="gap-2">
                 <View className="flex-row justify-between">
                   <Text style={{ fontFamily: "Inter", fontSize: 16 }} className="text-on-surface-variant">Estimated Labor (2 hours)</Text>
-                  <Text style={{ fontFamily: "Inter", fontSize: 16 }} className="text-on-surface">$170.00</Text>
+                  <Text style={{ fontFamily: "Inter", fontSize: 16 }} className="text-on-surface">${laborCost.toFixed(2)}</Text>
                 </View>
                 <View className="flex-row justify-between">
                   <Text style={{ fontFamily: "Inter", fontSize: 16 }} className="text-on-surface-variant">Service Call Fee</Text>
-                  <Text style={{ fontFamily: "Inter", fontSize: 16 }} className="text-on-surface">$45.00</Text>
+                  <Text style={{ fontFamily: "Inter", fontSize: 16 }} className="text-on-surface">${serviceFee.toFixed(2)}</Text>
                 </View>
                 <View className="flex-row justify-between">
                   <Text style={{ fontFamily: "Inter", fontSize: 16 }} className="text-on-surface-variant">Platform Trust Fee</Text>
-                  <Text style={{ fontFamily: "Inter", fontSize: 16 }} className="text-on-surface">$12.50</Text>
+                  <Text style={{ fontFamily: "Inter", fontSize: 16 }} className="text-on-surface">${platformFee.toFixed(2)}</Text>
                 </View>
               </View>
               <View className="h-px bg-outline-variant my-4" />
@@ -162,7 +234,7 @@ export default function BookServiceScreen() {
                   <Text style={{ fontFamily: "Manrope-SemiBold", fontSize: 20 }} className="text-primary">Total Estimate</Text>
                   <Text style={{ fontFamily: "Inter", fontSize: 13 }} className="text-on-surface-variant mt-1">Final price may vary based on actual work.</Text>
                 </View>
-                <Text style={{ fontFamily: "Manrope-SemiBold", fontSize: 24, lineHeight: 31 }} className="text-primary">$227.50</Text>
+                <Text style={{ fontFamily: "Manrope-SemiBold", fontSize: 24, lineHeight: 31 }} className="text-primary">${totalPrice.toFixed(2)}</Text>
               </View>
             </View>
           </View>
@@ -172,12 +244,19 @@ export default function BookServiceScreen() {
       {/* Sticky bottom CTA */}
       <View className="absolute bottom-0 left-0 right-0 bg-surface-container-lowest border-t border-outline-variant p-4" style={Shadows.md}>
         <TouchableOpacity
-          onPress={() => router.push("/(tabs)/bookings")}
-          className="w-full bg-secondary py-4 rounded-xl flex-row items-center justify-center gap-2"
+          onPress={handleSubmit}
+          disabled={submitting}
+          className={`w-full bg-secondary py-4 rounded-xl flex-row items-center justify-center gap-2 ${submitting ? "opacity-50" : ""}`}
           activeOpacity={0.85}
         >
-          <Text style={{ fontFamily: "Inter-SemiBold", fontSize: 14, color: Colors.onSecondary }}>Submit Request</Text>
-          <ArrowRight size={18} color={Colors.onSecondary} />
+          {submitting ? (
+            <ActivityIndicator color={Colors.onSecondary} />
+          ) : (
+            <>
+              <Text style={{ fontFamily: "Inter-SemiBold", fontSize: 14, color: Colors.onSecondary }}>Submit Request</Text>
+              <ArrowRight size={18} color={Colors.onSecondary} />
+            </>
+          )}
         </TouchableOpacity>
         <Text style={{ fontFamily: "Inter-Medium", fontSize: 12, letterSpacing: 0.48 }} className="text-on-surface-variant text-center mt-1">
           You won't be charged until the provider accepts.

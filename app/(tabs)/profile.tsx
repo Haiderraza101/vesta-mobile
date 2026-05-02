@@ -7,22 +7,24 @@ import ProfileMenuItem from "../../components/ui/ProfileMenuItem";
 import PrimaryButton from "../../components/ui/PrimaryButton";
 import { useAuth } from "../../context/AuthContext";
 import { Colors, Shadows } from "../../src/constants/theme";
-import { MOCK_USER } from "../../src/constants/mockData";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, logout } = useAuth();
-  const isProvider = user?.role === "provider";
+  const { profile, logout } = useAuth();
+  const isProvider = profile?.role === "provider";
 
-  const handleSignOut = () => {
-    logout();
+  const handleSignOut = async () => {
+    await logout();
     router.replace("/(auth)/login");
   };
 
+  const displayName = profile?.fullName || "User";
+  const displayEmail = profile?.email || "";
+
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
-      <AppHeader showBack avatarUrl={MOCK_USER.avatarUrl} />
+      <AppHeader showBack />
 
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 24 }}>
         <View className="px-4 pt-4 gap-4">
@@ -32,11 +34,11 @@ export default function ProfileScreen() {
             style={Shadows.md}
           >
             <View className="relative mb-4">
-              <Image
-                source={{ uri: MOCK_USER.avatarUrl }}
-                className="w-24 h-24 rounded-full border-4 border-surface-container-lowest"
-                style={Shadows.sm}
-              />
+              <View className="w-24 h-24 rounded-full bg-secondary-fixed items-center justify-center border-4 border-surface-container-lowest" style={Shadows.sm}>
+                <Text style={{ fontFamily: "Manrope-Bold", fontSize: 32, color: Colors.secondary }}>
+                  {displayName.charAt(0).toUpperCase()}
+                </Text>
+              </View>
               <TouchableOpacity
                 onPress={() => router.push("/edit-profile")}
                 className="absolute bottom-0 right-0 bg-secondary w-8 h-8 rounded-full items-center justify-center"
@@ -46,12 +48,12 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             </View>
             <Text style={{ fontFamily: "Manrope-SemiBold", fontSize: 24, lineHeight: 31 }} className="text-on-surface mb-1">
-              {MOCK_USER.name}
+              {displayName}
             </Text>
             <Text style={{ fontFamily: "Inter", fontSize: 16 }} className="text-on-surface-variant mb-2">
-              {isProvider ? "Expert Electrician" : MOCK_USER.email}
+              {displayEmail}
             </Text>
-            
+
             {isProvider ? (
               <View className="flex-row gap-3">
                 <View className="flex-row items-center gap-1 px-3 py-1 rounded-full bg-surface-container-high">
@@ -60,18 +62,12 @@ export default function ProfileScreen() {
                     Verified
                   </Text>
                 </View>
-                <View className="flex-row items-center gap-1 px-3 py-1 rounded-full bg-surface-container-high">
-                  <Star size={13} color={Colors.secondary} />
-                  <Text style={{ fontFamily: "Inter-Medium", fontSize: 12, letterSpacing: 0.48 }} className="text-secondary">
-                    4.8 Rating
-                  </Text>
-                </View>
               </View>
             ) : (
               <View className="flex-row items-center gap-1 px-3 py-1 rounded-full bg-surface-container-high">
                 <ShieldCheck size={13} color={Colors.onSurfaceVariant} />
                 <Text style={{ fontFamily: "Inter-Medium", fontSize: 12, letterSpacing: 0.48 }} className="text-on-surface-variant">
-                  {MOCK_USER.badge}
+                  Customer
                 </Text>
               </View>
             )}
@@ -79,26 +75,6 @@ export default function ProfileScreen() {
 
           {isProvider ? (
             <>
-              {/* Provider Stats */}
-              <View className="flex-row gap-3">
-                <View className="flex-1 bg-surface-container-lowest rounded-xl border border-outline-variant p-4" style={Shadows.md}>
-                  <Text style={{ fontFamily: "Inter-Medium", fontSize: 12, letterSpacing: 0.48 }} className="text-on-surface-variant mb-1">
-                    Jobs Completed
-                  </Text>
-                  <Text style={{ fontFamily: "Manrope-SemiBold", fontSize: 24, lineHeight: 31 }} className="text-secondary">
-                    150
-                  </Text>
-                </View>
-                <View className="flex-1 bg-surface-container-lowest rounded-xl border border-outline-variant p-4" style={Shadows.md}>
-                  <Text style={{ fontFamily: "Inter-Medium", fontSize: 12, letterSpacing: 0.48 }} className="text-on-surface-variant mb-1">
-                    Earnings
-                  </Text>
-                  <Text style={{ fontFamily: "Manrope-SemiBold", fontSize: 24, lineHeight: 31 }} className="text-secondary">
-                    $2.4K
-                  </Text>
-                </View>
-              </View>
-
               {/* Provider Settings */}
               <View className="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden" style={Shadows.md}>
                 <ProfileMenuItem

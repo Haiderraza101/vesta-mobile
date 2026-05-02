@@ -4,33 +4,34 @@ import { useRouter } from "expo-router";
 import { Mail, Lock } from "lucide-react-native";
 import InputField from "../../components/ui/InputField";
 import PrimaryButton from "../../components/ui/PrimaryButton";
-import { useAuth } from "../../context/AuthContext";
+import { loginUser } from "../../services/db";
 import { Colors, Shadows } from "../../src/constants/theme";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert("Error", "Please enter both email and password.");
+      Alert.alert("Error", "Please fill in all fields.");
       return;
     }
+
     setLoading(true);
     try {
-      await login(email.trim(), password);
-      // Navigation is handled by _layout.tsx auth guard
+      await loginUser(email.trim(), password);
+      // Auth state listener in AuthContext will handle navigation via index.tsx
+      router.replace("/");
     } catch (error: any) {
-      let message = "An error occurred during sign in.";
+      let message = "Login failed. Please try again.";
       if (error.code === "auth/user-not-found") message = "No account found with this email.";
       else if (error.code === "auth/wrong-password") message = "Incorrect password.";
       else if (error.code === "auth/invalid-email") message = "Invalid email address.";
-      else if (error.code === "auth/invalid-credential") message = "Invalid email or password.";
-      Alert.alert("Sign In Failed", message);
+      else if (error.code === "auth/invalid-credential") message = "Invalid credentials. Please check your email and password.";
+      Alert.alert("Login Failed", message);
     } finally {
       setLoading(false);
     }
@@ -70,9 +71,16 @@ export default function LoginScreen() {
               />
 
               <View className="gap-2">
-                <Text style={{ fontFamily: "Inter-SemiBold", fontSize: 14, letterSpacing: 0.28 }} className="text-on-surface">
-                  Password
-                </Text>
+                <View className="flex-row justify-between items-center">
+                  <Text style={{ fontFamily: "Inter-SemiBold", fontSize: 14, letterSpacing: 0.28 }} className="text-on-surface">
+                    Password
+                  </Text>
+                  <TouchableOpacity>
+                    <Text style={{ fontFamily: "Inter-Medium", fontSize: 12, letterSpacing: 0.48, color: Colors.secondary }}>
+                      Forgot Password?
+                    </Text>
+                  </TouchableOpacity>
+                </View>
                 <InputField
                   label=""
                   icon={<Lock size={20} color={Colors.outline} />}
@@ -86,8 +94,17 @@ export default function LoginScreen() {
               <PrimaryButton title="Sign In" onPress={handleLogin} loading={loading} />
             </View>
 
+            {/* Divider */}
+            <View className="flex-row items-center my-6">
+              <View className="flex-1 h-px bg-outline-variant" />
+              <Text style={{ fontFamily: "Inter", fontSize: 14 }} className="px-4 text-on-surface-variant bg-surface-container-lowest">
+                or
+              </Text>
+              <View className="flex-1 h-px bg-outline-variant" />
+            </View>
+
             {/* Sign up link */}
-            <View className="mt-8 items-center">
+            <View className="mt-4 items-center">
               <Text style={{ fontFamily: "Inter", fontSize: 14 }} className="text-on-surface-variant">
                 Don't have an account?{" "}
                 <Text
