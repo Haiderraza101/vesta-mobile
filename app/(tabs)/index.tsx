@@ -106,12 +106,21 @@ export default function HomeDashboard() {
     }
   };
 
-  const filteredServices = popularServices.filter(s => {
-    const matchesCategory = activeCategory === "All" || s.category === activeCategory;
-    const matchesSearch = s.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         s.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const [sortOrder, setSortOrder] = useState<'none' | 'asc' | 'desc'>('none');
+
+  const filteredServices = popularServices
+    .filter(s => {
+      const matchesCategory = activeCategory === "All" || s.category === activeCategory;
+      const matchesSearch = s.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                           s.description.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    })
+    .sort((a, b) => {
+      if (sortOrder === 'none') return 0;
+      const priceA = parseFloat(a.price.replace('$', ''));
+      const priceB = parseFloat(b.price.replace('$', ''));
+      return sortOrder === 'asc' ? priceA - priceB : priceB - priceA;
+    });
 
   if (loading) {
     return (
@@ -156,6 +165,12 @@ export default function HomeDashboard() {
                     onChangeText={setSearchQuery}
                   />
                 </View>
+                <TouchableOpacity 
+                  onPress={() => setSortOrder(prev => prev === 'none' ? 'asc' : prev === 'asc' ? 'desc' : 'none')}
+                  className={`ml-4 w-[64px] h-[64px] rounded-3xl items-center justify-center border border-slate-50 shadow-sm ${sortOrder !== 'none' ? 'bg-primary' : 'bg-white'}`}
+                >
+                  <SlidersHorizontal size={22} color={sortOrder !== 'none' ? 'white' : '#4C6FFF'} />
+                </TouchableOpacity>
               </View>
 
               <View className="px-6 mb-12">
