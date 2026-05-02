@@ -23,6 +23,7 @@ export default function BookingsScreen() {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [filter, setFilter] = useState<'active' | 'history'>('active');
 
   useEffect(() => {
     if (!user?.uid || !userProfile?.role) return;
@@ -84,6 +85,11 @@ export default function BookingsScreen() {
     }
   };
 
+  const filteredBookings = bookings.filter(b => {
+    if (filter === 'active') return b.status === 'pending' || b.status === 'confirmed';
+    return b.status === 'completed' || b.status === 'cancelled';
+  });
+
   if (loading) {
     return (
       <View className="flex-1 items-center justify-center bg-white">
@@ -95,9 +101,24 @@ export default function BookingsScreen() {
   return (
     <SafeAreaView className="flex-1 bg-[#F8FAFC]" edges={['top']}>
       <LinearGradient colors={['#F8FAFC', '#FFFFFF']} className="flex-1">
-        <View className="px-6 pt-6 mb-8">
+        <View className="px-6 pt-6 mb-4">
            <Text weight="bold" className="text-3xl text-slate-900">My Bookings</Text>
            <Text className="text-slate-500 mt-1">Track your service history</Text>
+        </View>
+
+        <View className="px-6 mb-8 flex-row gap-3">
+           <TouchableOpacity 
+             onPress={() => setFilter('active')}
+             className={`px-6 py-3 rounded-2xl border ${filter === 'active' ? 'bg-slate-900 border-slate-900 shadow-md' : 'bg-white border-slate-50'}`}
+           >
+              <Text weight="bold" className={filter === 'active' ? 'text-white' : 'text-slate-500'}>Active</Text>
+           </TouchableOpacity>
+           <TouchableOpacity 
+             onPress={() => setFilter('history')}
+             className={`px-6 py-3 rounded-2xl border ${filter === 'history' ? 'bg-slate-900 border-slate-900 shadow-md' : 'bg-white border-slate-50'}`}
+           >
+              <Text weight="bold" className={filter === 'history' ? 'text-white' : 'text-slate-500'}>History</Text>
+           </TouchableOpacity>
         </View>
         
         <ScrollView 
@@ -106,23 +127,25 @@ export default function BookingsScreen() {
           contentContainerStyle={{ paddingBottom: 160 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4C6FFF" />}
         >
-          {bookings.length === 0 ? (
+          {filteredBookings.length === 0 ? (
             <View className="mt-20 items-center justify-center bg-white p-12 rounded-[48px] border border-slate-50 shadow-sm">
               <View className="w-24 h-24 bg-slate-50 rounded-[32px] items-center justify-center mb-8">
                 <Calendar size={40} color="#CBD5E1" strokeWidth={1.5} />
               </View>
-              <Text weight="bold" className="text-2xl text-slate-900 mb-2">No bookings yet</Text>
+              <Text weight="bold" className="text-2xl text-slate-900 mb-2">No bookings found</Text>
               <Text className="text-slate-500 text-center text-base leading-7 mb-10 px-4">
-                You haven't scheduled any services yet. Start exploring the marketplace!
+                {filter === 'active' ? "You don't have any active bookings right now." : "Your service history is currently empty."}
               </Text>
-              <Button 
-                title="Explore Services" 
-                className="w-full rounded-full h-16 shadow-lg shadow-primary/20"
-                onPress={() => router.push('/(tabs)')}
-              />
+              {filter === 'active' && (
+                <Button 
+                  title="Explore Services" 
+                  className="w-full rounded-full h-16 shadow-lg shadow-primary/20"
+                  onPress={() => router.push('/(tabs)')}
+                />
+              )}
             </View>
           ) : (
-            bookings.map((booking) => (
+            filteredBookings.map((booking) => (
               <Card 
                 key={booking.id} 
                 className="mb-6 overflow-hidden border-slate-50 bg-white shadow-sm"
