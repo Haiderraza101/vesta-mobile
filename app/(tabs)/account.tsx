@@ -13,8 +13,10 @@ import { useDisclosure } from "../../hooks/useDisclosure";
 import { useToast } from "../../context/ToastContext";
 import { useAuth } from "../../context/AuthContext";
 import { userService } from "../../services/userService";
+import { storageService } from "../../services/storageService";
 import { LinearGradient } from 'expo-linear-gradient';
 import { User, CreditCard, Bell, Shield, LogOut, ChevronRight, HelpCircle, Camera, Mail, Phone } from "lucide-react-native";
+import { ImageSourceModal } from "../../components/ui/ImageSourceModal";
 
 export default function AccountScreen() {
   const router = useRouter();
@@ -25,7 +27,9 @@ export default function AccountScreen() {
   
   const [name, setName] = useState(userProfile?.fullName || "");
   const [updating, setUpdating] = useState(false);
-
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const imageSourceDisclosure = useDisclosure();
+  
   const MENU_ITEMS = [
     { id: 1, name: "Profile Settings", icon: User, action: editDisclosure.open },
     ...(userProfile?.role === 'admin' ? [{ id: 5, name: "Admin Dashboard", icon: Shield, action: () => router.push('/admin') }] : []),
@@ -46,12 +50,28 @@ export default function AccountScreen() {
     }
   };
 
+  const handleImageSelect = async (useCamera: boolean) => {
+    try {
+      const uri = await storageService.pickImage(useCamera);
+      if (uri) {
+        setUploadingImage(true);
+        const uploadUrl = await storageService.uploadImage(uri, `avatars/${userProfile?.uid}`);
+        await userService.updateUserProfile(userProfile?.uid || '', { avatar: uploadUrl });
+        showToast("Profile image updated", "success");
+      }
+    } catch (error: any) {
+      showToast(error.message || "Update failed", "error");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await signOut();
       logoutDisclosure.close();
       showToast("Logged out successfully", "success");
-      router.replace("/onboarding");
+      router.replace("/(auth)/login");
     } catch (error) {
       showToast("Logout failed", "error");
     }
@@ -70,13 +90,18 @@ export default function AccountScreen() {
           <Card className="p-7 mb-10 flex-row items-center gap-7 bg-white border-white shadow-xl shadow-slate-200">
             <View className="relative">
               <View className="w-[88px] h-[88px] rounded-[32px] overflow-hidden border-4 border-slate-50 shadow-sm bg-primary/10 items-center justify-center">
-                {userProfile?.avatar ? (
+                {uploadingImage ? (
+                  <ActivityIndicator color="#4C6FFF" />
+                ) : userProfile?.avatar ? (
                   <Image source={{ uri: userProfile.avatar }} className="w-full h-full" />
                 ) : (
                   <Text weight="bold" className="text-3xl text-primary">{userProfile?.fullName?.charAt(0) || 'U'}</Text>
                 )}
               </View>
-              <TouchableOpacity className="absolute bottom-[-4] right-[-4] w-10 h-10 bg-primary rounded-2xl items-center justify-center border-4 border-white shadow-md">
+              <TouchableOpacity 
+                onPress={imageSourceDisclosure.open}
+                className="absolute bottom-[-4] right-[-4] w-10 h-10 bg-primary rounded-2xl items-center justify-center border-4 border-white shadow-md"
+              >
                 <Camera size={16} color="white" strokeWidth={2.5} />
               </TouchableOpacity>
             </View>
@@ -165,6 +190,12 @@ export default function AccountScreen() {
             </View>
           </View>
         </AppModal>
+
+        <ImageSourceModal 
+          visible={imageSourceDisclosure.isOpen}
+          onClose={imageSourceDisclosure.close}
+          onSelect={handleImageSelect}
+        />
 
       </LinearGradient>
     </SafeAreaView>

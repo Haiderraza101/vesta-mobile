@@ -12,7 +12,7 @@ import { useToast } from "../../context/ToastContext";
 import { useAuth } from "../../context/AuthContext";
 import { bookingService, Booking } from "../../services/bookingService";
 import { LinearGradient } from 'expo-linear-gradient';
-import { Calendar, Clock, CheckCircle2, MessageSquare, AlertCircle, MapPin, CreditCard } from "lucide-react-native";
+import { Calendar, Clock, CheckCircle2, MessageSquare, AlertCircle, MapPin, CreditCard, Package } from "lucide-react-native";
 
 export default function BookingsScreen() {
   const router = useRouter();
