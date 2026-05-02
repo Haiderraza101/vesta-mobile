@@ -85,6 +85,9 @@ export default function HomeDashboard() {
     try {
       await bookingService.updateBookingStatus(bookingId, status);
       showToast(`Booking ${status} successfully`, "success");
+      
+      // Update local state for immediate feedback if not real-time
+      setIncomingBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status } : b));
     } catch (error) {
       showToast("Failed to update booking", "error");
     }
