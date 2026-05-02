@@ -85,6 +85,9 @@ export default function HomeDashboard() {
     try {
       await bookingService.updateBookingStatus(bookingId, status);
       showToast(`Booking ${status} successfully`, "success");
+      
+      // Update local state for immediate feedback if not real-time
+      setIncomingBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status } : b));
     } catch (error) {
       showToast("Failed to update booking", "error");
     }
@@ -254,6 +257,44 @@ export default function HomeDashboard() {
                     <Text className="text-white/40 text-[10px] uppercase mt-1">Rating</Text>
                   </View>
                 </View>
+
+                <View className="mt-8">
+                   <View className="flex-row justify-between mb-2">
+                      <Text className="text-white/40 text-[10px] uppercase font-bold tracking-widest">Monthly Goal Progress</Text>
+                      <Text className="text-primary text-[10px] font-bold uppercase tracking-widest">84%</Text>
+                   </View>
+                   <View className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
+                      <View className="h-full bg-primary w-[84%] rounded-full shadow-sm shadow-primary/50" />
+                   </View>
+                </View>
+
+                <View className="mt-6 flex-row items-center gap-2">
+                   <View className="bg-emerald-500/20 px-2 py-1 rounded-lg">
+                      <Text weight="bold" className="text-emerald-400 text-[10px]">+12.5%</Text>
+                   </View>
+                   <Text className="text-white/40 text-[10px] uppercase font-bold tracking-widest">vs Last Month</Text>
+                </View>
+              </View>
+
+              <View className="mb-10 flex-row gap-4">
+                 <TouchableOpacity 
+                   onPress={() => router.push('/provider/services')}
+                   className="flex-1 bg-white p-6 rounded-[32px] border border-slate-50 shadow-sm items-center justify-center gap-3"
+                 >
+                    <View className="w-12 h-12 bg-primary/10 rounded-2xl items-center justify-center">
+                       <Package size={24} color="#4C6FFF" />
+                    </View>
+                    <Text weight="bold" className="text-slate-900 text-sm">Manage Services</Text>
+                 </TouchableOpacity>
+                 <TouchableOpacity 
+                   onPress={() => router.push('/(tabs)/bookings')}
+                   className="flex-1 bg-white p-6 rounded-[32px] border border-slate-50 shadow-sm items-center justify-center gap-3"
+                 >
+                    <View className="w-12 h-12 bg-emerald-50 rounded-2xl items-center justify-center">
+                       <Calendar size={24} color="#10B981" />
+                    </View>
+                    <Text weight="bold" className="text-slate-900 text-sm">View Schedule</Text>
+                 </TouchableOpacity>
               </View>
 
               <SectionHeader title="Active Bookings" onSeeAll={() => router.push('/(tabs)/bookings')} />
@@ -265,14 +306,41 @@ export default function HomeDashboard() {
                    </View>
                  ) : (
                    incomingBookings.filter(b => b.status === 'pending' || b.status === 'confirmed').slice(0, 3).map((booking) => (
-                     <Card key={booking.id} className="p-5 bg-white border-slate-50 shadow-sm flex-row items-center gap-5" style={{ borderRadius: 28 }}>
-                        <Image source={{ uri: booking.serviceImage }} className="w-16 h-16 rounded-2xl" />
-                        <View className="flex-1">
-                           <Text weight="bold" className="text-slate-900 text-base" numberOfLines={1}>{booking.serviceName}</Text>
-                           <Text className="text-slate-500 text-xs mt-1">{booking.date} • {booking.time}</Text>
+                     <Card key={booking.id} className="p-5 bg-white border-slate-50 shadow-sm" style={{ borderRadius: 32 }}>
+                        <View className="flex-row items-center gap-5 mb-5">
+                           <Image source={{ uri: booking.serviceImage }} className="w-16 h-16 rounded-2xl" />
+                           <View className="flex-1">
+                              <Text weight="bold" className="text-slate-900 text-base" numberOfLines={1}>{booking.serviceName}</Text>
+                              <Text className="text-slate-500 text-xs mt-1">{booking.date} • {booking.time}</Text>
+                           </View>
+                           <View className={`px-3 py-1.5 rounded-xl ${booking.status === 'confirmed' ? 'bg-blue-50' : 'bg-amber-50'}`}>
+                              <Text weight="bold" className={`text-[10px] uppercase tracking-wider ${booking.status === 'confirmed' ? 'text-blue-500' : 'text-amber-500'}`}>{booking.status}</Text>
+                           </View>
                         </View>
-                        <View className={`px-3 py-1.5 rounded-xl ${booking.status === 'confirmed' ? 'bg-blue-50' : 'bg-amber-50'}`}>
-                           <Text weight="bold" className={`text-[10px] uppercase tracking-wider ${booking.status === 'confirmed' ? 'text-blue-500' : 'text-amber-500'}`}>{booking.status}</Text>
+                        
+                        <View className="flex-row gap-2 pt-4 border-t border-slate-50">
+                           {booking.status === 'pending' && (
+                             <TouchableOpacity 
+                               onPress={() => handleUpdateStatus(booking.id!, 'confirmed')}
+                               className="flex-1 bg-primary/10 h-11 rounded-2xl items-center justify-center border border-primary/10"
+                             >
+                                <Text weight="bold" className="text-primary text-[10px] uppercase tracking-widest">Confirm</Text>
+                             </TouchableOpacity>
+                           )}
+                           {booking.status === 'confirmed' && (
+                             <TouchableOpacity 
+                               onPress={() => handleUpdateStatus(booking.id!, 'completed')}
+                               className="flex-1 bg-emerald-500 h-11 rounded-2xl items-center justify-center shadow-lg shadow-emerald-500/20"
+                             >
+                                <Text weight="bold" className="text-white text-[10px] uppercase tracking-widest">Complete</Text>
+                             </TouchableOpacity>
+                           )}
+                           <TouchableOpacity 
+                              onPress={() => handleUpdateStatus(booking.id!, 'cancelled')}
+                              className="flex-1 bg-slate-50 h-11 rounded-2xl items-center justify-center border border-slate-100"
+                           >
+                              <Text weight="bold" className="text-slate-400 text-[10px] uppercase tracking-widest">Cancel</Text>
+                           </TouchableOpacity>
                         </View>
                      </Card>
                    ))
