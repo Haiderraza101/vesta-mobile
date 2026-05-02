@@ -195,7 +195,7 @@ export default function HomeDashboard() {
                         key={service.id} 
                         className="overflow-hidden bg-white border-slate-50 shadow-sm"
                         style={{ width: '100%', borderRadius: 32 }}
-                        onPress={() => setSelectedService(service)}
+                        onPress={() => router.push(`/service/${service.id}`)}
                       >
                         <View className="aspect-[16/10] w-full relative">
                           <Image source={{ uri: service.image }} className="w-full h-full" resizeMode="cover" />
