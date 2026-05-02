@@ -259,6 +259,27 @@ export default function HomeDashboard() {
                 </View>
               </View>
 
+              <View className="mb-10 flex-row gap-4">
+                 <TouchableOpacity 
+                   onPress={() => router.push('/provider/services')}
+                   className="flex-1 bg-white p-6 rounded-[32px] border border-slate-50 shadow-sm items-center justify-center gap-3"
+                 >
+                    <View className="w-12 h-12 bg-primary/10 rounded-2xl items-center justify-center">
+                       <Package size={24} color="#4C6FFF" />
+                    </View>
+                    <Text weight="bold" className="text-slate-900 text-sm">Manage Services</Text>
+                 </TouchableOpacity>
+                 <TouchableOpacity 
+                   onPress={() => router.push('/(tabs)/bookings')}
+                   className="flex-1 bg-white p-6 rounded-[32px] border border-slate-50 shadow-sm items-center justify-center gap-3"
+                 >
+                    <View className="w-12 h-12 bg-emerald-50 rounded-2xl items-center justify-center">
+                       <Calendar size={24} color="#10B981" />
+                    </View>
+                    <Text weight="bold" className="text-slate-900 text-sm">View Schedule</Text>
+                 </TouchableOpacity>
+              </View>
+
               <SectionHeader title="Active Bookings" onSeeAll={() => router.push('/(tabs)/bookings')} />
               <View className="gap-y-6 mt-4">
                  {incomingBookings.filter(b => b.status === 'pending' || b.status === 'confirmed').length === 0 ? (
