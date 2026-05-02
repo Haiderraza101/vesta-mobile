@@ -1,17 +1,15 @@
 import React from "react";
 import { View, TouchableOpacity, StyleSheet, Dimensions, Platform } from "react-native";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { Home, Calendar, LayoutGrid, User, MessageSquare } from "lucide-react-native";
+import { Home, Calendar, LayoutGrid, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-const { width } = Dimensions.get('window');
 
 export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.container, { bottom: Math.max(insets.bottom, 24) }]}>
-      <View style={styles.tabBar}>
+    <View className="absolute bottom-14 left-6 right-6">
+      <View className="bg-slate-900 h-20 rounded-full flex-row items-center justify-around px-4 shadow-2xl shadow-slate-900/40 border border-white/5">
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
           const isFocused = state.index === index;
@@ -31,13 +29,14 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
           const Icon = () => {
             const color = isFocused ? "#FFFFFF" : "#64748B";
             const size = 22;
+            const strokeWidth = isFocused ? 2.5 : 2;
             
             switch (route.name) {
-              case "index": return <Home size={size} color={color} strokeWidth={isFocused ? 2.5 : 2} />;
-              case "bookings": return <Calendar size={size} color={color} strokeWidth={isFocused ? 2.5 : 2} />;
-              case "categories": return <LayoutGrid size={size} color={color} strokeWidth={isFocused ? 2.5 : 2} />;
-              case "account": return <User size={size} color={color} strokeWidth={isFocused ? 2.5 : 2} />;
-              default: return <Home size={size} color={color} strokeWidth={isFocused ? 2.5 : 2} />;
+              case "index": return <Home size={size} color={color} strokeWidth={strokeWidth} />;
+              case "bookings": return <Calendar size={size} color={color} strokeWidth={strokeWidth} />;
+              case "categories": return <LayoutGrid size={size} color={color} strokeWidth={strokeWidth} />;
+              case "account": return <User size={size} color={color} strokeWidth={strokeWidth} />;
+              default: return <Home size={size} color={color} strokeWidth={strokeWidth} />;
             }
           };
 
@@ -45,11 +44,8 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
             <TouchableOpacity
               key={route.key}
               onPress={onPress}
-              style={[
-                styles.tabItem,
-                isFocused && styles.tabItemActive
-              ]}
               activeOpacity={0.7}
+              className={`w-14 h-14 rounded-full items-center justify-center ${isFocused ? 'bg-primary shadow-lg shadow-primary/30' : ''}`}
             >
               <Icon />
             </TouchableOpacity>
@@ -59,45 +55,3 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    left: 24,
-    right: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-  },
-  tabBar: {
-    flexDirection: 'row',
-    width: '100%',
-    height: 80,
-    backgroundColor: '#0F172A', // Dark Slate
-    borderRadius: 40,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    elevation: 15,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  tabItem: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tabItemActive: {
-    backgroundColor: '#4C6FFF', // Primary Blue
-    shadowColor: "#4C6FFF",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-});

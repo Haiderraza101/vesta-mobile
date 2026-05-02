@@ -82,43 +82,45 @@ export default function AccountScreen() {
       <LinearGradient colors={['#F0F7FF', '#FFFFFF']} className="flex-1">
         <ScreenHeader title="My Account" showProfile={false} />
 
-        <ScrollView 
-          className="flex-1 px-6 pt-6" 
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 160 }}
-        >
-          <Card className="p-7 mb-10 flex-row items-center gap-7 bg-white border-white shadow-xl shadow-slate-200">
-            <View className="relative">
-              <View className="w-[88px] h-[88px] rounded-[32px] overflow-hidden border-4 border-slate-50 shadow-sm bg-primary/10 items-center justify-center">
+      <ScrollView 
+        className="flex-1 px-6 pt-6" 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 160 }}
+      >
+        <View className="bg-slate-900 p-10 rounded-[48px] shadow-2xl shadow-slate-900/30 mb-12 border border-white/5">
+          <View className="items-center">
+            <View className="relative mb-6">
+              <View className="w-32 h-32 rounded-[40px] bg-white/10 items-center justify-center overflow-hidden border-2 border-white/20">
                 {uploadingImage ? (
-                  <ActivityIndicator color="#4C6FFF" />
+                  <ActivityIndicator color="white" />
                 ) : userProfile?.avatar ? (
                   <Image source={{ uri: userProfile.avatar }} className="w-full h-full" />
                 ) : (
-                  <Text weight="bold" className="text-3xl text-primary">{userProfile?.fullName?.charAt(0) || 'U'}</Text>
+                  <Text weight="bold" className="text-4xl text-white">{userProfile?.fullName?.charAt(0) || 'U'}</Text>
                 )}
               </View>
               <TouchableOpacity 
                 onPress={imageSourceDisclosure.open}
-                className="absolute bottom-[-4] right-[-4] w-10 h-10 bg-primary rounded-2xl items-center justify-center border-4 border-white shadow-md"
+                className="absolute -bottom-2 -right-2 w-11 h-11 bg-primary rounded-2xl items-center justify-center border-4 border-slate-900 shadow-lg"
               >
-                <Camera size={16} color="white" strokeWidth={2.5} />
+                <Camera size={18} color="white" strokeWidth={2.5} />
               </TouchableOpacity>
             </View>
-            <View className="flex-1">
-              <Text weight="bold" className="text-2xl text-slate-900 mb-1 leading-8">{userProfile?.fullName || 'User'}</Text>
-              <View className="flex-row items-center gap-1.5 mb-4">
-                <View className="w-2 h-2 rounded-full bg-green-500" />
-                <Text weight="bold" className="text-slate-400 text-[11px] uppercase tracking-widest">{userProfile?.role || 'Customer'}</Text>
-              </View>
-              <TouchableOpacity 
-                onPress={editDisclosure.open}
-                className="bg-primary/5 self-start px-5 py-2.5 rounded-2xl border border-primary/10"
-              >
-                <Text weight="bold" className="text-primary text-[12px]">Manage Profile</Text>
-              </TouchableOpacity>
+            
+            <Text weight="bold" className="text-white text-3xl text-center mb-2">{userProfile?.fullName || 'User'}</Text>
+            <View className="flex-row items-center gap-2 px-5 py-2 bg-white/10 rounded-full border border-white/5">
+               <View className="w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50" />
+               <Text weight="bold" className="text-white text-[10px] uppercase tracking-widest">{userProfile?.role || 'Customer'}</Text>
             </View>
-          </Card>
+            
+            <TouchableOpacity 
+              onPress={editDisclosure.open}
+              className="mt-8 bg-primary/20 px-8 py-3 rounded-2xl border border-primary/20"
+            >
+              <Text weight="bold" className="text-primary text-[12px] tracking-widest uppercase">Edit Profile</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
           <View className="mb-10">
             <Text weight="bold" className="text-[20px] tracking-tight text-slate-900 mb-6">General Settings</Text>
