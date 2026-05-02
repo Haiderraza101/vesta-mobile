@@ -15,7 +15,8 @@ import { useAuth } from "../../context/AuthContext";
 import { serviceService, Category, Service } from "../../services/serviceService";
 import { bookingService, Booking } from "../../services/bookingService";
 import { notificationService, Notification } from "../../services/notificationService";
-import { Search, SlidersHorizontal, ArrowUpRight, Sparkles, Star, Clock, X, CheckCircle2, Package, Calendar, Bell, Ticket } from "lucide-react-native";
+import { providerService, ProviderStats } from "../../services/providerService";
+import { Search, SlidersHorizontal, ArrowUpRight, Sparkles, Star, Clock, X, CheckCircle2, Package, Calendar, Bell, Ticket, TrendingUp, Users, DollarSign } from "lucide-react-native";
 import { LinearGradient } from 'expo-linear-gradient';
 import { useMarketplace } from "../../hooks/useMarketplace";
 
@@ -31,6 +32,12 @@ export default function HomeDashboard() {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const { categories, services: popularServices, loading } = useMarketplace();
   const [incomingBookings, setIncomingBookings] = useState<Booking[]>([]);
+  const [providerStats, setProviderStats] = useState<ProviderStats>({
+    totalEarnings: 0,
+    totalBookings: 0,
+    averageRating: 0,
+    activeBookings: 0
+  });
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [activeCategory, setActiveCategory] = useState("All");
@@ -39,13 +46,27 @@ export default function HomeDashboard() {
   const isProvider = userProfile?.role === 'provider';
 
   useEffect(() => {
+    // Real-time notifications
     let unsubNotifs: (() => void) | undefined;
+    let unsubStats: (() => void) | undefined;
+
     if (user?.uid) {
       unsubNotifs = notificationService.subscribeToNotifications(user.uid, (data) => {
         setNotifications(data);
       });
+
+      if (isProvider) {
+        unsubStats = providerService.subscribeToProviderStats(user.uid, (data) => {
+          setProviderStats(data);
+        });
+        
+        bookingService.getProviderBookings(user.uid).then(setIncomingBookings);
+      }
     }
-    return () => unsubNotifs && unsubNotifs();
+    return () => {
+      unsubNotifs && unsubNotifs();
+      unsubStats && unsubStats();
+    };
   }, [user?.uid]);
 
   useEffect(() => {
@@ -201,9 +222,62 @@ export default function HomeDashboard() {
               </View>
             </>
           ) : (
-            // Provider View logic stays consistent but improved
+            // Provider View
             <View className="px-6 py-8">
-               {/* ... provider content ... */}
+              <View className="bg-slate-900 p-8 rounded-[48px] shadow-2xl shadow-slate-900/40 mb-10 border border-white/5">
+                <Text weight="bold" className="text-white/60 text-xs uppercase tracking-[4px] mb-6">Business Overview</Text>
+                <View className="flex-row justify-between">
+                  <View>
+                    <Text className="text-white/40 text-xs mb-1">Total Earnings</Text>
+                    <Text weight="bold" className="text-4xl text-white">${providerStats.totalEarnings.toLocaleString()}</Text>
+                  </View>
+                  <View className="w-14 h-14 bg-primary rounded-2xl items-center justify-center shadow-lg shadow-primary/30">
+                    <TrendingUp size={24} color="white" />
+                  </View>
+                </View>
+                
+                <View className="h-[1px] bg-white/10 w-full my-8" />
+                
+                <View className="flex-row justify-between">
+                  <View className="items-center">
+                    <Text weight="bold" className="text-white text-xl">{providerStats.totalBookings}</Text>
+                    <Text className="text-white/40 text-[10px] uppercase mt-1">Bookings</Text>
+                  </View>
+                  <View className="w-[1px] h-8 bg-white/10" />
+                  <View className="items-center">
+                    <Text weight="bold" className="text-white text-xl">{providerStats.activeBookings}</Text>
+                    <Text className="text-white/40 text-[10px] uppercase mt-1">Active</Text>
+                  </View>
+                  <View className="w-[1px] h-8 bg-white/10" />
+                  <View className="items-center">
+                    <Text weight="bold" className="text-white text-xl">{providerStats.averageRating}</Text>
+                    <Text className="text-white/40 text-[10px] uppercase mt-1">Rating</Text>
+                  </View>
+                </View>
+              </View>
+
+              <SectionHeader title="Active Bookings" onSeeAll={() => router.push('/(tabs)/bookings')} />
+              <View className="gap-y-6 mt-4">
+                 {incomingBookings.filter(b => b.status === 'pending' || b.status === 'confirmed').length === 0 ? (
+                   <View className="bg-white p-12 rounded-[40px] items-center border border-slate-50 shadow-sm">
+                      <Clock size={40} color="#CBD5E1" strokeWidth={1.5} />
+                      <Text className="text-slate-400 mt-4 font-medium">No active bookings</Text>
+                   </View>
+                 ) : (
+                   incomingBookings.filter(b => b.status === 'pending' || b.status === 'confirmed').slice(0, 3).map((booking) => (
+                     <Card key={booking.id} className="p-5 bg-white border-slate-50 shadow-sm flex-row items-center gap-5" style={{ borderRadius: 28 }}>
+                        <Image source={{ uri: booking.serviceImage }} className="w-16 h-16 rounded-2xl" />
+                        <View className="flex-1">
+                           <Text weight="bold" className="text-slate-900 text-base" numberOfLines={1}>{booking.serviceName}</Text>
+                           <Text className="text-slate-500 text-xs mt-1">{booking.date} • {booking.time}</Text>
+                        </View>
+                        <View className={`px-3 py-1.5 rounded-xl ${booking.status === 'confirmed' ? 'bg-blue-50' : 'bg-amber-50'}`}>
+                           <Text weight="bold" className={`text-[10px] uppercase tracking-wider ${booking.status === 'confirmed' ? 'text-blue-500' : 'text-amber-500'}`}>{booking.status}</Text>
+                        </View>
+                     </Card>
+                   ))
+                 )}
+              </View>
             </View>
           )}
         </ScrollView>
