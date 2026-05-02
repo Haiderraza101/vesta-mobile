@@ -14,7 +14,9 @@
       "backgroundColor": "#4F46E5"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.vestamobile",
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "package": "com.vestamobile",

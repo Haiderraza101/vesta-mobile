@@ -14,7 +14,7 @@ const CONFIG: Record<OrderStatus, { bg: string; text: string; label: string }> =
   in_progress: { bg: "#d1fae5", text: "#065f46", label: "In Progress" },
   completed:   { bg: "#e4e2e4", text: "#45464d", label: "Completed" },
   cancelled:   { bg: "#fee2e2", text: "#991b1b", label: "Cancelled" },
-  declined:    { bg: "#fecaca", text: "#7f1d1d", label: "Declined" },
+  declined:    { bg: "#fce4ec", text: "#880e4f", label: "Declined" },
 };
 
 export default function StatusBadge({ status, label }: StatusBadgeProps) {
