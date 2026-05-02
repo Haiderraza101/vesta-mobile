@@ -17,6 +17,7 @@ import { bookingService, Booking } from "../../services/bookingService";
 import { notificationService, Notification } from "../../services/notificationService";
 import { Search, SlidersHorizontal, ArrowUpRight, Sparkles, Star, Clock, X, CheckCircle2, Package, Calendar, Bell, Ticket } from "lucide-react-native";
 import { LinearGradient } from 'expo-linear-gradient';
+import { useMarketplace } from "../../hooks/useMarketplace";
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -28,61 +29,23 @@ export default function HomeDashboard() {
   const notifDisclosure = useDisclosure();
   
   const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [popularServices, setPopularServices] = useState<Service[]>([]);
+  const { categories, services: popularServices, loading } = useMarketplace();
   const [incomingBookings, setIncomingBookings] = useState<Booking[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
   const isProvider = userProfile?.role === 'provider';
 
-  // UseFocusEffect to ensure data is fresh when navigating back
-  useFocusEffect(
-    useCallback(() => {
-      if (isProvider && user?.uid) {
-        bookingService.getProviderBookings(user.uid).then(setIncomingBookings);
-      }
-    }, [isProvider, user?.uid])
-  );
-
   useEffect(() => {
-    let catsLoaded = false;
-    let servicesLoaded = false;
-
-    const checkLoading = () => {
-      if (catsLoaded && servicesLoaded) setLoading(false);
-    };
-
-    // Real-time categories
-    const unsubCats = serviceService.subscribeToCategories((data) => {
-      setCategories(data);
-      catsLoaded = true;
-      checkLoading();
-    });
-
-    // Real-time services
-    const unsubServices = serviceService.subscribeToServices((data) => {
-      setPopularServices(data);
-      servicesLoaded = true;
-      checkLoading();
-    });
-
-    // Real-time notifications
     let unsubNotifs: (() => void) | undefined;
     if (user?.uid) {
       unsubNotifs = notificationService.subscribeToNotifications(user.uid, (data) => {
         setNotifications(data);
       });
     }
-
-    return () => {
-      unsubCats();
-      unsubServices();
-      unsubNotifs && unsubNotifs();
-    };
+    return () => unsubNotifs && unsubNotifs();
   }, [user?.uid]);
 
   useEffect(() => {
@@ -109,13 +72,13 @@ export default function HomeDashboard() {
   const [sortOrder, setSortOrder] = useState<'none' | 'asc' | 'desc'>('none');
 
   const filteredServices = popularServices
-    .filter(s => {
+    .filter((s: Service) => {
       const matchesCategory = activeCategory === "All" || s.category === activeCategory;
       const matchesSearch = s.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                            s.description.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesCategory && matchesSearch;
     })
-    .sort((a, b) => {
+    .sort((a: Service, b: Service) => {
       if (sortOrder === 'none') return 0;
       const priceA = parseFloat(a.price.replace('$', ''));
       const priceB = parseFloat(b.price.replace('$', ''));
@@ -183,7 +146,7 @@ export default function HomeDashboard() {
                     >
                       <Text weight="bold" className={activeCategory === "All" ? 'text-white' : 'text-slate-500'}>All</Text>
                     </TouchableOpacity>
-                    {categories.map((cat) => (
+                    {categories.map((cat: Category) => (
                       <TouchableOpacity 
                         key={cat.id} 
                         onPress={() => setActiveCategory(cat.name)}
@@ -205,7 +168,7 @@ export default function HomeDashboard() {
                        <Text className="text-slate-400 mt-4 text-base font-medium">No services found in this category</Text>
                     </View>
                   ) : (
-                    filteredServices.map((service) => (
+                    filteredServices.map((service: Service) => (
                       <Card 
                         key={service.id} 
                         className="overflow-hidden bg-white border-slate-50 shadow-sm"
