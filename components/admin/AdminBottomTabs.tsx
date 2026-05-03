@@ -1,6 +1,8 @@
 import React from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Home, BarChart3, LayoutGrid, User } from 'lucide-react-native';
+import { Text } from '../ui/Text';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export type TabType = 'home' | 'analytics' | 'management' | 'profile';
 
@@ -10,37 +12,71 @@ interface AdminBottomTabsProps {
 }
 
 export function AdminBottomTabs({ activeTab, onTabPress }: AdminBottomTabsProps) {
-  return (
-    <View className="absolute bottom-14 left-6 right-6">
-      <View className="bg-slate-900 h-20 rounded-full flex-row items-center justify-around px-4 shadow-2xl shadow-slate-900/40 border border-white/5">
-        <TouchableOpacity 
-          onPress={() => onTabPress('home')}
-          className={`w-14 h-14 rounded-full items-center justify-center ${activeTab === 'home' ? 'bg-primary' : 'transparent'}`}
-        >
-          <Home size={22} color={activeTab === 'home' ? "white" : "#64748B"} />
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          onPress={() => onTabPress('analytics')}
-          className={`w-14 h-14 rounded-full items-center justify-center ${activeTab === 'analytics' ? 'bg-primary' : 'transparent'}`}
-        >
-          <BarChart3 size={22} color={activeTab === 'analytics' ? "white" : "#64748B"} />
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          onPress={() => onTabPress('management')}
-          className={`w-14 h-14 rounded-full items-center justify-center ${activeTab === 'management' ? 'bg-primary' : 'transparent'}`}
-        >
-          <LayoutGrid size={22} color={activeTab === 'management' ? "white" : "#64748B"} />
-        </TouchableOpacity>
+  const insets = useSafeAreaInsets();
 
-        <TouchableOpacity 
-          onPress={() => onTabPress('profile')}
-          className={`w-14 h-14 rounded-full items-center justify-center ${activeTab === 'profile' ? 'bg-primary' : 'transparent'}`}
-        >
-          <User size={22} color={activeTab === 'profile' ? "white" : "#64748B"} />
-        </TouchableOpacity>
+  const TABS = [
+    { id: 'home' as TabType, label: 'Home', icon: Home },
+    { id: 'analytics' as TabType, label: 'Stats', icon: BarChart3 },
+    { id: 'management' as TabType, label: 'Manage', icon: LayoutGrid },
+    { id: 'profile' as TabType, label: 'Profile', icon: User },
+  ];
+
+  return (
+    <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+      <View style={styles.tabBar}>
+        {TABS.map((tab) => {
+          const isFocused = activeTab === tab.id;
+          const color = isFocused ? "#4C6FFF" : "#64748B";
+          const Icon = tab.icon;
+
+          return (
+            <TouchableOpacity
+              key={tab.id}
+              onPress={() => onTabPress(tab.id)}
+              activeOpacity={0.7}
+              style={styles.tabItem}
+            >
+              <View style={styles.iconContainer}>
+                <Icon size={22} color={color} />
+              </View>
+              <Text
+                variant="caption"
+                weight={isFocused ? "medium" : "normal"}
+                style={[styles.label, { color }]}
+              >
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  tabBar: {
+    height: 55,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+  },
+  tabItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 8,
+  },
+  iconContainer: {
+    marginBottom: 4,
+  },
+  label: {
+    fontSize: 11,
+  }
+});

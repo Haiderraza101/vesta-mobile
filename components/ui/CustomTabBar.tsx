@@ -1,17 +1,18 @@
 import React from "react";
-import { View, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
+import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { Home, Calendar, LayoutGrid, User, Briefcase, ShoppingBag } from "lucide-react-native";
 import { useAuth } from "@/hooks/useAuth";
-
-const { width } = Dimensions.get('window');
+import { Text } from "./Text";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const { userProfile } = useAuth();
   const isProvider = userProfile?.role === 'provider';
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 12) }]}>
       <View style={styles.tabBar}>
         {state.routes.map((route, index) => {
           const descriptor = descriptors[route.key];
@@ -21,6 +22,13 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
           const isFocused = state.index === index;
 
           if ((options as any).href === null) return null;
+
+          const label =
+            options.tabBarLabel !== undefined
+              ? options.tabBarLabel
+              : options.title !== undefined
+              ? options.title
+              : route.name;
 
           const onPress = () => {
             const event = navigation.emit({
@@ -34,7 +42,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
             }
           };
 
-          const color = isFocused ? "#FFFFFF" : "#94A3B8";
+          const color = isFocused ? "#4C6FFF" : "#94A3B8";
           const size = 22;
 
           let icon;
@@ -55,13 +63,19 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
             <TouchableOpacity
               key={route.key}
               onPress={onPress}
-              activeOpacity={0.8}
-              style={[
-                styles.tabItem,
-                isFocused && styles.tabItemFocused
-              ]}
+              activeOpacity={0.7}
+              style={styles.tabItem}
             >
-              {icon}
+              <View style={styles.iconContainer}>
+                {icon}
+              </View>
+              <Text
+                variant="caption"
+                weight={isFocused ? "medium" : "normal"}
+                style={[styles.label, { color }]}
+              >
+                {label as string}
+              </Text>
             </TouchableOpacity>
           );
         })}
@@ -72,35 +86,27 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
-    bottom: 30, 
-    left: 28,
-    right: 28,
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
   },
   tabBar: {
-    backgroundColor: '#0F172A', 
-    height: 72, 
-    borderRadius: 36,
+    height: 55,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.4,
-    shadowRadius: 24,
-    elevation: 10,
   },
   tabItem: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingTop: 8,
   },
-  tabItemFocused: {
-    backgroundColor: '#4C6FFF', 
+  iconContainer: {
+    marginBottom: 4,
+  },
+  label: {
+    fontSize: 11,
   }
 });
