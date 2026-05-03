@@ -6,6 +6,7 @@ import { Shield, CheckCircle2, UserPlus, Layers, Package } from 'lucide-react-na
 import { AdminStatCard } from './AdminStatCard';
 import { AdminStats } from '@/hooks/useAdminStats';
 import { UserProfile } from '@/services/userService';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 interface HomeTabProps {
   userProfile: UserProfile | null;
@@ -107,20 +108,28 @@ export function HomeTab({
           </TouchableOpacity>
         </View>
         <View className="gap-4">
-          {stats.recentBookings.map((b, i) => (
-            <View key={i} className="bg-white p-5 rounded-[32px] border border-slate-50 flex-row items-center gap-4">
-              <View className="w-12 h-12 bg-primary/5 rounded-2xl items-center justify-center">
-                <Package size={22} color="#4C6FFF" />
+          {stats.recentBookings.length === 0 ? (
+            <EmptyState 
+              title="No recent activity"
+              description="New booking requests and platform updates will appear here."
+              icon={Package}
+            />
+          ) : (
+            stats.recentBookings.map((b, i) => (
+              <View key={i} className="bg-white p-5 rounded-[32px] border border-slate-50 flex-row items-center gap-4">
+                <View className="w-12 h-12 bg-primary/5 rounded-2xl items-center justify-center">
+                  <Package size={22} color="#4C6FFF" />
+                </View>
+                <View className="flex-1">
+                  <Text weight="bold" className="text-slate-900 text-sm">{b.serviceName}</Text>
+                  <Text className="text-slate-400 text-[10px] mt-0.5">{b.date}</Text>
+                </View>
+                <View className={`px-3 py-1 rounded-full ${b.status === 'completed' ? 'bg-emerald-50' : 'bg-amber-50'}`}>
+                  <Text weight="bold" className={`text-[10px] ${b.status === 'completed' ? 'text-emerald-500' : 'text-amber-500'}`}>{b.status}</Text>
+                </View>
               </View>
-              <View className="flex-1">
-                <Text weight="bold" className="text-slate-900 text-sm">{b.serviceName}</Text>
-                <Text className="text-slate-400 text-[10px] mt-0.5">{b.date}</Text>
-              </View>
-              <View className={`px-3 py-1 rounded-full ${b.status === 'completed' ? 'bg-emerald-50' : 'bg-amber-50'}`}>
-                <Text weight="bold" className={`text-[10px] ${b.status === 'completed' ? 'text-emerald-500' : 'text-amber-500'}`}>{b.status}</Text>
-              </View>
-            </View>
-          ))}
+            ))
+          )}
         </View>
       </View>
     </ScrollView>
