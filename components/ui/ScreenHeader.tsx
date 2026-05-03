@@ -17,7 +17,7 @@ export function ScreenHeader({
   title, 
   subtitle, 
   showProfile = true, 
-  showNotification = true,
+  showNotification = false,
   hasUnread = true,
   onNotificationPress 
 }: ScreenHeaderProps) {

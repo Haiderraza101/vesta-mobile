@@ -2,12 +2,14 @@ import React, { useState } from "react";
 import { View, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, Link } from "expo-router";
-import { Text } from "../../components/ui/Text";
-import { Input } from "../../components/ui/Input";
-import { Button } from "../../components/ui/Button";
-import { useToast } from "../../context/ToastContext";
-import { ArrowLeft, Mail, Lock } from "lucide-react-native";
-import { authService } from "../../services/authService";
+import { Text } from "@/components/ui/Text";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+import { useToast } from "@/context/ToastContext";
+import { Mail, Lock } from "lucide-react-native";
+import { authService } from "@/services/authService";
+import { userService } from "@/services/userService";
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function Login() {
   const router = useRouter();
@@ -25,7 +27,6 @@ export default function Login() {
     setLoading(true);
     try {
       const user = await authService.signIn(email, password);
-      const { userService } = require("../../services/userService");
       const profile = await userService.getUserProfile(user.uid);
       
       showToast("Welcome back!", "success");
@@ -43,73 +44,75 @@ export default function Login() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-      <StatusBar barStyle="dark-content" />
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : "height"} 
-        className="flex-1"
-      >
-        <ScrollView 
-          contentContainerStyle={{ flexGrow: 1 }}
-          showsVerticalScrollIndicator={false}
-          className="px-8"
+    <View className="flex-1 bg-primary">
+      <StatusBar barStyle="light-content" />
+      
+      <View className="h-[38%] justify-center px-8">
+        <LinearGradient 
+          colors={['#4C6FFF', '#3b5edb']} 
+          className="absolute inset-0" 
+        />
+        <SafeAreaView edges={['top']} className="-mt-8">
+          <Text weight="bold" className="text-[28px] leading-[38px] text-white tracking-tight">
+            Connect with the{"\n"}
+            best home service{"\n"}
+            professionals.
+          </Text>
+        </SafeAreaView>
+      </View>
+
+      <View className="flex-1 bg-white rounded-t-[40px] -mt-6 shadow-2xl">
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === "ios" ? "padding" : "height"} 
+          className="flex-1"
         >
-          <TouchableOpacity 
-            onPress={() => router.canGoBack() ? router.back() : router.replace("/(auth)/signup")}
-            className="mt-4 mb-10 h-12 w-12 items-center justify-center border border-slate-100 rounded-2xl shadow-sm bg-white"
+          <ScrollView 
+            scrollEnabled={false}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 28, paddingTop: 40, paddingBottom: 24 }}
           >
-            <ArrowLeft size={22} color="#1E293B" strokeWidth={2.5} />
-          </TouchableOpacity>
+            <View className="items-center mb-6">
+              <Text weight="bold" className="text-2xl text-slate-900 mb-2">Login</Text>
+                <View className="flex-row items-center gap-1">
+                <Text className="text-slate-500 text-[14px]">Don't Have An Account?</Text>
+                <Link href="/(auth)/role-selection" asChild>
+                  <TouchableOpacity activeOpacity={0.5}>
+                    <Text weight="bold" className="text-primary text-[14px]">Sign Up</Text>
+                  </TouchableOpacity>
+                </Link>
+              </View>
+            </View>
 
-          <View className="mb-12">
-            <Text weight="bold" className="text-4xl mb-4 text-slate-900">Welcome Back</Text>
-            <Text className="text-slate-500 text-lg leading-7">Sign in to continue your home maintenance journey.</Text>
-          </View>
+            <View className="gap-y-4 mb-8">
+              <Input 
+                placeholder="Email Address"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={email}
+                onChangeText={setEmail}
+                leftIcon={<Mail size={18} color="#94A3B8" />}
+                className="bg-slate-50 border-0 h-14"
+              />
+              <Input 
+                placeholder="Password"
+                secureTextEntry
+                isPassword
+                value={password}
+                onChangeText={setPassword}
+                leftIcon={<Lock size={18} color="#94A3B8" />}
+                className="bg-slate-50 border-0 h-14"
+              />
+            </View>
 
-          <View className="gap-6">
-            <Input 
-              label="Email Address"
-              placeholder="name@example.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
-              leftIcon={<Mail size={20} color="#94A3B8" />}
-            />
-            <Input 
-              label="Password"
-              placeholder="Enter your password"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              leftIcon={<Lock size={20} color="#94A3B8" />}
-            />
-            
-            <TouchableOpacity className="items-end">
-              <Text weight="semibold" className="text-primary text-sm uppercase tracking-wider">Forgot Password?</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View className="mt-auto py-10">
             <Button 
-              title="Log In" 
+              title={loading ? "Logging in..." : "Login"} 
               onPress={handleLogin} 
               loading={loading}
-              size="lg"
-              className="rounded-full h-16 shadow-lg shadow-primary/20"
+              className="h-14 bg-primary shadow-md shadow-primary/20"
             />
-            
-            <View className="flex-row items-center justify-center mt-10 gap-2">
-              <Text className="text-slate-500">Don't have an account?</Text>
-              <Link href="/(auth)/role-selection" asChild>
-                <TouchableOpacity>
-                  <Text weight="bold" className="text-primary uppercase tracking-widest text-sm">Sign Up</Text>
-                </TouchableOpacity>
-              </Link>
-            </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </View>
+    </View>
   );
 }

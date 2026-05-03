@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { collection, onSnapshot, getDocs } from "firebase/firestore";
+import { collection, onSnapshot, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Booking } from "@/services/bookingService";
 import { UserProfile } from "@/services/userService";
@@ -36,115 +36,67 @@ export function useAdminStats() {
   });
   const [loading, setLoading] = useState(true);
 
-  const calculateTopServices = (bookings: Booking[]) => {
-    const serviceCounts: { [key: string]: number } = {};
-    bookings.forEach(b => {
-      if (b.serviceName) {
-        serviceCounts[b.serviceName] = (serviceCounts[b.serviceName] || 0) + 1;
-      }
-    });
-
-    const colors = ['#4C6FFF', '#10B981', '#F59E0B', '#8B5CF6'];
-    return Object.entries(serviceCounts)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 4)
-      .map(([name, count], i) => ({
-        name,
-        count,
-        color: colors[i] || '#4C6FFF'
-      }));
-  };
-
-  const refreshStats = async () => {
-    try {
-      const [usersSnap, catsSnap, servsSnap, booksSnap] = await Promise.all([
-        getDocs(collection(db, "users")),
-        getDocs(collection(db, "categories")),
-        getDocs(collection(db, "services")),
-        getDocs(collection(db, "bookings"))
-      ]);
-
-      const allUsers = usersSnap.docs.map(doc => doc.data() as UserProfile);
-      const allBookings = booksSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
-
-      setStats({
-        totalUsers: allUsers.length,
-        totalProviders: allUsers.filter(u => u.role === 'provider').length,
-        totalCustomers: allUsers.filter(u => u.role === 'customer').length,
-        totalAdmins: allUsers.filter(u => u.role === 'admin').length,
-        totalBookings: allBookings.length,
-        pendingBookings: allBookings.filter(b => b.status === 'pending').length,
-        completedBookings: allBookings.filter(b => b.status === 'completed').length,
-        cancelledBookings: allBookings.filter(b => b.status === 'cancelled').length,
-        totalServices: servsSnap.size,
-        totalCategories: catsSnap.size,
-        recentBookings: allBookings.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)).slice(0, 3),
-        topServices: calculateTopServices(allBookings)
-      });
-    } catch (error) {
-      console.error("Refresh error:", error);
-    }
-  };
-
   useEffect(() => {
-    let usersLoaded = false;
-    let categoriesLoaded = false;
-    let servicesLoaded = false;
-    let bookingsLoaded = false;
-
-    const checkLoading = () => {
-      if (usersLoaded && categoriesLoaded && servicesLoaded && bookingsLoaded) {
-        setLoading(false);
-      }
-    };
-
-    const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
-      const allUsers = snapshot.docs.map(doc => doc.data() as UserProfile);
+    // Real-time listeners for all core collections
+    const unsubUsers = onSnapshot(collection(db, "users"), (snap) => {
+      const users = snap.docs.map(doc => doc.data() as UserProfile);
       setStats(prev => ({
         ...prev,
-        totalUsers: allUsers.length,
-        totalProviders: allUsers.filter(u => u.role === 'provider').length,
-        totalCustomers: allUsers.filter(u => u.role === 'customer').length,
-        totalAdmins: allUsers.filter(u => u.role === 'admin').length,
+        totalUsers: users.length,
+        totalProviders: users.filter(u => u.role === 'provider').length,
+        totalCustomers: users.filter(u => u.role === 'customer').length,
+        totalAdmins: users.filter(u => u.role === 'admin').length
       }));
-      usersLoaded = true;
-      checkLoading();
     });
 
-    const unsubCategories = onSnapshot(collection(db, "categories"), (snapshot) => {
-      setStats(prev => ({ ...prev, totalCategories: snapshot.size }));
-      categoriesLoaded = true;
-      checkLoading();
-    });
+    const unsubBookings = onSnapshot(collection(db, "bookings"), (snap) => {
+      const bookings = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
+      
+      const serviceCounts: { [key: string]: number } = {};
+      bookings.forEach(b => {
+        if (b.serviceName) {
+          serviceCounts[b.serviceName] = (serviceCounts[b.serviceName] || 0) + 1;
+        }
+      });
 
-    const unsubServices = onSnapshot(collection(db, "services"), (snapshot) => {
-      setStats(prev => ({ ...prev, totalServices: snapshot.size }));
-      servicesLoaded = true;
-      checkLoading();
-    });
+      const colors = ['#4C6FFF', '#10B981', '#F59E0B', '#8B5CF6'];
+      const topServices = Object.entries(serviceCounts)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 4)
+        .map(([name, count], i) => ({
+          name,
+          count,
+          color: colors[i] || '#4C6FFF'
+        }));
 
-    const unsubBookings = onSnapshot(collection(db, "bookings"), (snapshot) => {
-      const allBookings = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
       setStats(prev => ({
         ...prev,
-        totalBookings: allBookings.length,
-        pendingBookings: allBookings.filter(b => b.status === 'pending').length,
-        completedBookings: allBookings.filter(b => b.status === 'completed').length,
-        cancelledBookings: allBookings.filter(b => b.status === 'cancelled').length,
-        recentBookings: allBookings.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)).slice(0, 3),
-        topServices: calculateTopServices(allBookings)
+        totalBookings: bookings.length,
+        pendingBookings: bookings.filter(b => b.status === 'pending').length,
+        completedBookings: bookings.filter(b => b.status === 'completed').length,
+        cancelledBookings: bookings.filter(b => b.status === 'cancelled').length,
+        recentBookings: bookings.sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds).slice(0, 5),
+        topServices
       }));
-      bookingsLoaded = true;
-      checkLoading();
     });
+
+    const unsubCategories = onSnapshot(collection(db, "categories"), (snap) => {
+      setStats(prev => ({ ...prev, totalCategories: snap.size }));
+    });
+
+    const unsubServices = onSnapshot(collection(db, "services"), (snap) => {
+      setStats(prev => ({ ...prev, totalServices: snap.size }));
+    });
+
+    setLoading(false);
 
     return () => {
       unsubUsers();
+      unsubBookings();
       unsubCategories();
       unsubServices();
-      unsubBookings();
     };
   }, []);
 
-  return { stats, loading, refreshStats };
+  return { stats, loading };
 }

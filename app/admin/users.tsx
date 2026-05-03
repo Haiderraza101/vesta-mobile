@@ -13,12 +13,15 @@ import { useToast } from "@/context/ToastContext";
 import { userService, UserProfile, UserRole } from "@/services/userService";
 import { ArrowLeft, Search, User as UserIcon, ArrowUpDown } from "lucide-react-native";
 import { UserListItem } from "@/components/admin/UserListItem";
+import { UserDetailModal } from "@/components/admin/UserDetailModal";
 
 export default function UserManagement() {
   const router = useRouter();
   const { showToast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [isDetailModalVisible, setDetailModalVisible] = useState(false);
+  const [isRoleModalVisible, setRoleModalVisible] = useState(false);
   const [roleUpdating, setRoleUpdating] = useState(false);
 
   const {
@@ -55,6 +58,7 @@ export default function UserManagement() {
     try {
       await userService.updateUserRole(selectedUser.uid, newRole);
       showToast("User role updated", "success");
+      setRoleModalVisible(false);
       setSelectedUser(null);
       refresh();
     } catch (error) {
@@ -64,13 +68,28 @@ export default function UserManagement() {
     }
   };
 
+  const handleUserPress = (user: UserProfile) => {
+    setSelectedUser(user);
+    setDetailModalVisible(true);
+  };
+
   if (loading) return <LoadingState message="Fetching users..." />;
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+      <UserDetailModal 
+        visible={isDetailModalVisible}
+        onClose={() => setDetailModalVisible(false)}
+        user={selectedUser}
+        onUpdateRole={() => {
+          setDetailModalVisible(false);
+          setRoleModalVisible(true);
+        }}
+      />
+
       <RoleModal 
-        visible={!!selectedUser}
-        onClose={() => setSelectedUser(null)}
+        visible={isRoleModalVisible}
+        onClose={() => setRoleModalVisible(false)}
         userName={selectedUser?.fullName || "User"}
         currentRole={selectedUser?.role || "customer"}
         onSelect={handleRoleUpdate}
@@ -126,7 +145,7 @@ export default function UserManagement() {
                 <UserListItem 
                   key={u.uid} 
                   user={u} 
-                  onPress={setSelectedUser} 
+                  onPress={handleUserPress} 
                 />
               ))}
               {loadingMore && <ActivityIndicator size="small" color="#4C6FFF" className="py-4" />}

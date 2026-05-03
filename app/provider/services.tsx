@@ -13,32 +13,34 @@ import { useAuth } from "../../context/AuthContext";
 import { serviceService, Service, Category } from "../../services/serviceService";
 import { providerService } from "../../services/providerService";
 import { storageService } from "../../services/storageService";
-import { ArrowLeft, Plus, Edit2, Trash2, Star, Tag, Package, Camera } from "lucide-react-native";
+import { ArrowLeft, Plus, Edit2, Trash2, Star, Tag, Package, Camera, Info } from "lucide-react-native";
 import { LinearGradient } from 'expo-linear-gradient';
 import { ImageSourceModal } from "../../components/ui/ImageSourceModal";
 
 export default function ProviderServicesScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const { showToast } = useToast();
-  const addDisclosure = useDisclosure();
+  const editDisclosure = useDisclosure();
   const imageSourceDisclosure = useDisclosure();
   
   const [myServices, setMyServices] = useState<Service[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
 
-  // Form State
-  const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
   const [image, setImage] = useState("");
 
   useEffect(() => {
+    if (userProfile && !userProfile.isHired) {
+      showToast("Verification required", "error");
+      router.back();
+      return;
+    }
+
     if (!user?.uid) return;
 
     const unsubServices = providerService.subscribeToProviderServices(user.uid, (data) => {
@@ -46,57 +48,31 @@ export default function ProviderServicesScreen() {
       setLoading(false);
     });
 
-    serviceService.getCategories().then(setCategories);
-
     return () => unsubServices();
-  }, [user?.uid]);
+  }, [user?.uid, userProfile]);
 
-  const handleSaveService = async () => {
-    if (!title || !price || !description || !category) {
+  const handleUpdateService = async () => {
+    if (!price || !description) {
       showToast("Please fill all fields", "error");
       return;
     }
 
+    if (!editingService) return;
+
     setSaving(true);
     try {
-      const serviceData = {
-        title,
-        price: price.startsWith('$') ? price : `$${price}`,
+      await serviceService.updateService(editingService.id, {
+        price: parseFloat(price),
         description,
-        category,
-        image: image || "https://images.unsplash.com/photo-1581578731548-c64695cc6952?q=80&w=800&auto=format&fit=crop",
-        rating: editingService?.rating || "5.0",
-        reviews: editingService?.reviews || "0",
-        providerId: user?.uid || ""
-      };
-
-      if (editingService) {
-        // Edit existing
-        await serviceService.updateService(editingService.id, serviceData);
-        showToast("Service updated successfully", "success");
-      } else {
-        // Add new
-        await serviceService.addService(serviceData);
-        showToast("Service added successfully", "success");
-      }
-      
-      addDisclosure.close();
-      resetForm();
+        image
+      });
+      showToast("Service updated", "success");
+      editDisclosure.close();
     } catch (error) {
-      showToast("Failed to save service", "error");
+      showToast("Update failed", "error");
     } finally {
       setSaving(false);
     }
-  };
-
-  const handleEdit = (service: Service) => {
-    setEditingService(service);
-    setTitle(service.title);
-    setPrice(service.price.toString().replace('$', ''));
-    setDescription(service.description);
-    setCategory(service.category);
-    setImage(service.image);
-    addDisclosure.open();
   };
 
   const handleImageSelect = async (useCamera: boolean) => {
@@ -117,26 +93,17 @@ export default function ProviderServicesScreen() {
   };
 
   const handleDelete = (id: string) => {
-    Alert.alert("Delete Service", "Are you sure you want to delete this service?", [
+    Alert.alert("Delete Service", "Are you sure you want to remove this service from your profile?", [
       { text: "Cancel", style: "cancel" },
       { text: "Delete", style: "destructive", onPress: async () => {
         try {
           await serviceService.deleteService(id);
-          showToast("Service deleted", "success");
+          showToast("Service removed", "success");
         } catch (error) {
-          showToast("Failed to delete", "error");
+          showToast("Failed to remove", "error");
         }
       }}
     ]);
-  };
-
-  const resetForm = () => {
-    setEditingService(null);
-    setTitle("");
-    setPrice("");
-    setDescription("");
-    setCategory("");
-    setImage("");
   };
 
   if (loading) {
@@ -158,118 +125,126 @@ export default function ProviderServicesScreen() {
             </TouchableOpacity>
             <View>
               <Text weight="bold" className="text-2xl text-slate-900">My Services</Text>
-              <Text className="text-slate-500 text-sm">Manage your offerings</Text>
+              <Text className="text-slate-400 text-xs font-medium">Manage your active offerings</Text>
             </View>
           </View>
           <TouchableOpacity 
-            onPress={addDisclosure.open}
+            onPress={() => router.push('/provider/marketplace')}
             className="w-12 h-12 bg-primary rounded-2xl items-center justify-center shadow-lg shadow-primary/20"
           >
             <Plus size={24} color="white" />
           </TouchableOpacity>
         </View>
 
-        <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 100 }}>
           {myServices.length === 0 ? (
-            <View className="py-20 items-center bg-white rounded-[40px] border border-slate-50 shadow-sm">
-               <Package size={64} color="#CBD5E1" strokeWidth={1} />
-               <Text weight="bold" className="text-slate-900 text-xl mt-6">No services yet</Text>
-               <Text className="text-slate-400 mt-2 text-center px-10 leading-6">You haven't listed any services yet. Tap the plus button to get started.</Text>
+            <View className="items-center justify-center py-20 bg-white rounded-[40px] border border-slate-50 border-dashed">
+              <View className="w-20 h-20 bg-slate-50 rounded-full items-center justify-center mb-6">
+                <Package size={32} color="#94A3B8" />
+              </View>
+              <Text weight="bold" className="text-lg text-slate-900 mb-2">No Active Services</Text>
+              <Text className="text-slate-400 text-sm text-center px-12 mb-8 leading-5">
+                Apply for services in the marketplace to start seeing them here.
+              </Text>
+              <Button 
+                title="Go to Marketplace" 
+                onPress={() => router.push('/provider/marketplace')}
+                className="px-8 rounded-2xl"
+              />
             </View>
           ) : (
             myServices.map((service) => (
-              <Card key={service.id} className="mb-6 bg-white border-slate-50 shadow-sm overflow-hidden" style={{ borderRadius: 32 }}>
-                <View className="flex-row p-5 gap-5">
-                  <Image source={{ uri: service.image }} className="w-24 h-24 rounded-2xl" />
-                  <View className="flex-1 justify-center">
-                     <View className="bg-primary/5 px-2.5 py-1 rounded-full self-start mb-2">
-                        <Text weight="bold" className="text-primary text-[10px] uppercase">{service.category}</Text>
-                     </View>
-                     <Text weight="bold" className="text-lg text-slate-900 mb-1" numberOfLines={1}>{service.title}</Text>
-                     <Text weight="bold" className="text-primary text-xl">${service.price}</Text>
+              <Card key={service.id} className="mb-6 p-5 rounded-[32px] overflow-hidden border-slate-50">
+                <View className="flex-row items-center gap-4 mb-4">
+                  <Image source={{ uri: service.image }} className="w-20 h-20 rounded-2xl" />
+                  <View className="flex-1">
+                    <Text weight="bold" className="text-lg text-slate-900">{service.title}</Text>
+                    <View className="flex-row items-center gap-2 mt-1">
+                      <Tag size={12} color="#4C6FFF" />
+                      <Text className="text-primary text-xs font-bold uppercase tracking-widest">{service.category}</Text>
+                    </View>
+                    <Text weight="bold" className="text-emerald-500 text-lg mt-2">${service.price}</Text>
                   </View>
                 </View>
-                <View className="bg-slate-50 px-5 py-3 flex-row justify-end gap-3 border-t border-slate-100">
-                   <TouchableOpacity onPress={() => handleDelete(service.id)} className="w-10 h-10 bg-rose-50 rounded-xl items-center justify-center">
-                      <Trash2 size={18} color="#F43F5E" />
-                   </TouchableOpacity>
-                   <TouchableOpacity 
-                      onPress={() => router.push(`/service/${service.id}`)}
-                      className="w-10 h-10 bg-white rounded-xl items-center justify-center border border-slate-100 shadow-sm"
-                   >
-                      <ArrowLeft size={18} color="#64748B" style={{ transform: [{ rotate: '135deg' }] }} />
-                   </TouchableOpacity>
-                   <TouchableOpacity 
-                      onPress={() => handleEdit(service)}
-                      className="w-10 h-10 bg-white rounded-xl items-center justify-center border border-slate-100 shadow-sm"
-                   >
-                      <Edit2 size={18} color="#64748B" />
-                   </TouchableOpacity>
+
+                <View className="flex-row gap-3 border-t border-slate-50 pt-4 mt-2">
+                  <TouchableOpacity 
+                    onPress={() => {
+                      setEditingService(service);
+                      setPrice(service.price.toString());
+                      setDescription(service.description);
+                      setImage(service.image);
+                      editDisclosure.open();
+                    }}
+                    className="flex-1 h-12 bg-slate-50 rounded-xl flex-row items-center justify-center gap-2"
+                  >
+                    <Edit2 size={16} color="#4C6FFF" />
+                    <Text weight="bold" className="text-primary text-sm">Edit Details</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    onPress={() => handleDelete(service.id)}
+                    className="w-12 h-12 bg-rose-50 rounded-xl items-center justify-center"
+                  >
+                    <Trash2 size={18} color="#E11D48" />
+                  </TouchableOpacity>
                 </View>
               </Card>
             ))
           )}
         </ScrollView>
-
-        <AppModal 
-          visible={addDisclosure.isOpen} 
-          onClose={() => {
-            addDisclosure.close();
-            resetForm();
-          }} 
-          title={editingService ? "Edit Service" : "Add New Service"}
-        >
-          <ScrollView className="mt-4" showsVerticalScrollIndicator={false}>
-            <View className="mb-8 items-center">
-               <TouchableOpacity 
-                 onPress={imageSourceDisclosure.open}
-                 className="w-full h-48 bg-slate-50 rounded-[32px] border-2 border-dashed border-slate-200 items-center justify-center overflow-hidden"
-               >
-                  {uploadingImage ? (
-                    <ActivityIndicator color="#4C6FFF" />
-                  ) : image ? (
-                    <Image source={{ uri: image }} className="w-full h-full" />
-                  ) : (
-                    <View className="items-center">
-                       <Camera size={32} color="#94A3B8" />
-                       <Text className="text-slate-400 mt-2 font-medium">Add Service Photo</Text>
-                    </View>
-                  )}
-               </TouchableOpacity>
-            </View>
-
-            <Input label="Service Title" value={title} onChangeText={setTitle} placeholder="e.g. Deep Home Cleaning" />
-            <Input label="Price ($)" value={price} onChangeText={setPrice} placeholder="e.g. 50" keyboardType="numeric" />
-            <Input label="Description" value={description} onChangeText={setDescription} placeholder="Describe what you offer..." multiline numberOfLines={4} className="h-32 pt-4" />
-            
-            <Text weight="bold" className="text-slate-700 mb-3 ml-1">Select Category</Text>
-            <View className="flex-row flex-wrap gap-3 mb-8">
-               {categories.map((cat) => (
-                 <TouchableOpacity 
-                  key={cat.id} 
-                  onPress={() => setCategory(cat.name)}
-                  className={`px-6 py-3 rounded-2xl border ${category === cat.name ? 'bg-primary border-primary shadow-md' : 'bg-white border-slate-100'}`}
-                 >
-                   <Text weight="bold" className={category === cat.name ? 'text-white' : 'text-slate-500'}>{cat.name}</Text>
-                 </TouchableOpacity>
-               ))}
-            </View>
-
-            <Button 
-              title={saving ? "Saving..." : (editingService ? "Update Service" : "Create Service")} 
-              className="rounded-full h-16 shadow-xl shadow-primary/30 mb-10" 
-              onPress={handleSaveService}
-              loading={saving}
-            />
-          </ScrollView>
-        </AppModal>
-
-        <ImageSourceModal 
-          visible={imageSourceDisclosure.isOpen}
-          onClose={imageSourceDisclosure.close}
-          onSelect={handleImageSelect}
-        />
       </LinearGradient>
+
+      <AppModal
+        visible={editDisclosure.isOpen}
+        onClose={editDisclosure.close}
+        title="Edit Service"
+      >
+        <ScrollView className="px-6 pb-10" showsVerticalScrollIndicator={false}>
+          <View className="items-center mb-8">
+            <TouchableOpacity onPress={imageSourceDisclosure.open} className="w-full h-48 bg-slate-50 rounded-[32px] overflow-hidden border border-slate-100 items-center justify-center">
+              {image ? (
+                <Image source={{ uri: image }} className="w-full h-full" />
+              ) : (
+                <View className="items-center">
+                  <Camera size={32} color="#94A3B8" />
+                  <Text className="text-slate-400 text-xs mt-2 font-medium">Update Photo</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          <Input 
+            label="Pricing" 
+            placeholder="e.g. 50" 
+            value={price} 
+            onChangeText={setPrice} 
+            keyboardType="numeric"
+            leftIcon={<Text weight="bold" className="text-slate-400">$</Text>}
+          />
+          <Input 
+            label="Service Description" 
+            placeholder="Describe your expertise..." 
+            value={description} 
+            onChangeText={setDescription} 
+            multiline
+            numberOfLines={4}
+            className="h-32"
+          />
+
+          <Button 
+            title="Update Offering" 
+            onPress={handleUpdateService} 
+            loading={saving}
+            className="h-16 rounded-2xl shadow-lg shadow-primary/20"
+          />
+        </ScrollView>
+      </AppModal>
+
+      <ImageSourceModal 
+        visible={imageSourceDisclosure.isOpen}
+        onClose={imageSourceDisclosure.close}
+        onSelect={handleImageSelect}
+      />
     </SafeAreaView>
   );
 }

@@ -2,12 +2,11 @@ import React, { useState, useEffect } from "react";
 import { View, ScrollView, TouchableOpacity, Image, StatusBar, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Text } from "../components/ui/Text";
-import { ScreenHeader } from "../components/ui/ScreenHeader";
-import { serviceService, Category } from "../services/serviceService";
+import { Text } from "@/components/ui/Text";
+import { serviceService, Category } from "@/services/serviceService";
 import { ArrowLeft, Search, ChevronRight } from "lucide-react-native";
 import { LinearGradient } from 'expo-linear-gradient';
-import { Input } from "../components/ui/Input";
+import { Input } from "@/components/ui/Input";
 
 export default function CategoriesScreen() {
   const router = useRouter();

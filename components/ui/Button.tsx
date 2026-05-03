@@ -10,6 +10,7 @@ interface ButtonProps {
   loading?: boolean;
   disabled?: boolean;
   className?: string;
+  style?: any;
   iconLeft?: React.ReactNode;
   iconRight?: React.ReactNode;
 }
@@ -22,10 +23,11 @@ export function Button({
   loading = false, 
   disabled = false, 
   className = '',
+  style,
   iconLeft,
   iconRight
 }: ButtonProps) {
-  const baseStyles = "flex-row items-center justify-center rounded-[22px]";
+  const baseStyles = "flex-row items-center justify-center rounded-2xl";
   
   const variants = {
     primary: "bg-[#4C6FFF]",
@@ -62,6 +64,7 @@ export function Button({
       activeOpacity={0.8}
       onPress={onPress}
       disabled={disabled || loading}
+      style={style}
       className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className} ${disabled ? 'opacity-40' : ''}`}
     >
       {loading ? (

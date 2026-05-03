@@ -6,7 +6,6 @@ import { Sparkles } from "lucide-react-native";
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from "../hooks/useAuth";
 
-const { height } = Dimensions.get("window");
 
 export default function SplashScreen() {
   const router = useRouter();

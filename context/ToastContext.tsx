@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
-import { View, Animated, StyleSheet, Dimensions, Platform, Modal } from 'react-native';
+import { View, Animated, StyleSheet, Dimensions, Platform, TouchableOpacity } from 'react-native';
 import { Text } from '../components/ui/Text';
-import { CheckCircle, AlertCircle, Info, Check } from 'lucide-react-native';
+import { CheckCircle2, AlertCircle, Info, X, AlertTriangle } from 'lucide-react-native';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
-type ToastType = 'success' | 'error' | 'info';
+type ToastType = 'success' | 'error' | 'info' | 'warning';
 
 interface ToastContextType {
   showToast: (message: string, type?: ToastType) => void;
@@ -18,59 +18,40 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [type, setType] = useState<ToastType>('info');
   const [visible, setVisible] = useState(false);
   
-  // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(-20)).current;
-  const successScale = useRef(new Animated.Value(0)).current;
-  const successFade = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(-100)).current;
 
-  const showToast = useCallback((msg: string, t: ToastType = 'info') => {
-    setMessage(msg);
-    setType(t);
-    setVisible(true);
-
-    if (t === 'success') {
-      // Full screen success animation
-      Animated.parallel([
-        Animated.timing(successFade, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.spring(successScale, {
-          toValue: 1,
-          friction: 6,
-          tension: 40,
-          useNativeDriver: true,
-        }),
-      ]).start();
-
-      setTimeout(() => {
-        hideSuccess();
-      }, 2500);
-    } else {
-      // Pill style for info/error
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          friction: 8,
-          tension: 40,
-          useNativeDriver: true,
-        }),
-      ]).start();
-
-      setTimeout(() => {
-        hidePill();
-      }, 3000);
+  const getToastConfig = (type: ToastType) => {
+    switch (type) {
+      case 'success':
+        return {
+          title: 'Success',
+          color: '#10B981',
+          icon: <CheckCircle2 size={24} color="#10B981" />
+        };
+      case 'error':
+        return {
+          title: 'Error',
+          color: '#EF4444',
+          icon: <AlertCircle size={24} color="#EF4444" />
+        };
+      case 'warning':
+        return {
+          title: 'Warning',
+          color: '#F59E0B',
+          icon: <AlertTriangle size={24} color="#F59E0B" />
+        };
+      case 'info':
+      default:
+        return {
+          title: 'Info',
+          color: '#3B82F6',
+          icon: <Info size={24} color="#3B82F6" />
+        };
     }
-  }, [fadeAnim, slideAnim, successScale, successFade]);
+  };
 
-  const hidePill = useCallback(() => {
+  const hideToast = useCallback(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 0,
@@ -78,70 +59,83 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         useNativeDriver: true,
       }),
       Animated.timing(slideAnim, {
-        toValue: -20,
+        toValue: -100,
         duration: 300,
         useNativeDriver: true,
       }),
     ]).start(() => setVisible(false));
   }, [fadeAnim, slideAnim]);
 
-  const hideSuccess = useCallback(() => {
-    Animated.timing(successFade, {
-      toValue: 0,
-      duration: 400,
-      useNativeDriver: true,
-    }).start(() => {
-      setVisible(false);
-      successScale.setValue(0);
-    });
-  }, [successFade, successScale]);
+  const showToast = useCallback((msg: string, t: ToastType = 'info') => {
+    setMessage(msg);
+    setType(t);
+    setVisible(true);
+
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        friction: 8,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    setTimeout(() => {
+      hideToast();
+    }, 4000);
+  }, [fadeAnim, slideAnim, hideToast]);
+
+  const config = getToastConfig(type);
 
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
       
-      {/* Pill Style (Info/Error) */}
-      {visible && type !== 'success' && (
+      {visible && (
         <Animated.View 
           style={[
-            styles.pillWrapper, 
+            styles.toastWrapper, 
             { 
               opacity: fadeAnim,
               transform: [{ translateY: slideAnim }]
             }
           ]}
         >
-          <View className="bg-white/95 border border-slate-50 flex-row items-center px-5 py-4 rounded-[28px] shadow-2xl">
-            <View className={`w-1 h-8 rounded-full mr-4 ${type === 'error' ? 'bg-rose-500' : 'bg-primary'}`} />
-            <View className="mr-3">
-              {type === 'error' ? <AlertCircle size={20} color="#F43F5E" /> : <Info size={20} color="#4C6FFF" />}
+          <View 
+            className="bg-white flex-row items-center rounded-2xl shadow-xl shadow-slate-200 overflow-hidden border border-slate-100"
+            style={{ minHeight: 80 }}
+          >
+            <View style={{ width: 6, height: '100%', backgroundColor: config.color }} />
+            
+            <View className="flex-1 flex-row items-center py-4 px-5">
+              <View className="mr-4">
+                {config.icon}
+              </View>
+              
+              <View className="flex-1">
+                <Text weight="bold" className="text-slate-900 text-[17px] mb-0.5">
+                  {config.title}
+                </Text>
+                <Text className="text-slate-500 text-[13px] leading-5">
+                  {message}
+                </Text>
+              </View>
+
+              <TouchableOpacity 
+                onPress={hideToast}
+                className="ml-2 w-8 h-8 items-center justify-center rounded-full"
+              >
+                <X size={20} color="#94A3B8" strokeWidth={2.5} />
+              </TouchableOpacity>
             </View>
-            <Text weight="semibold" className="text-slate-900 text-[14px] flex-1 leading-5">
-              {message}
-            </Text>
           </View>
         </Animated.View>
       )}
-
-      {/* Full Screen Success Overlay (Apple Style) */}
-      <Modal visible={visible && type === 'success'} transparent animationType="none">
-        <Animated.View 
-          style={[styles.successOverlay, { opacity: successFade }]}
-          className="bg-primary items-center justify-center"
-        >
-          <Animated.View style={{ transform: [{ scale: successScale }] }} className="items-center">
-            <View className="w-32 h-32 bg-white/20 rounded-full items-center justify-center mb-8">
-              <View className="w-24 h-24 bg-white rounded-full items-center justify-center">
-                <Check size={56} color="#4C6FFF" strokeWidth={4} />
-              </View>
-            </View>
-            <Text weight="bold" className="text-white text-3xl mb-4">Done!</Text>
-            <Text weight="medium" className="text-white/80 text-lg text-center px-10 leading-6">
-              {message}
-            </Text>
-          </Animated.View>
-        </Animated.View>
-      </Modal>
     </ToastContext.Provider>
   );
 }
@@ -153,17 +147,11 @@ export const useToast = () => {
 };
 
 const styles = StyleSheet.create({
-  pillWrapper: {
+  toastWrapper: {
     position: 'absolute',
     top: Platform.OS === 'ios' ? 60 : 40,
-    left: 24,
-    right: 24,
+    left: 20,
+    right: 20,
     zIndex: 9999,
-  },
-  successOverlay: {
-    flex: 1,
-    width: width,
-    height: height,
-    zIndex: 10000,
   }
 });

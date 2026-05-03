@@ -1,5 +1,6 @@
 import React from 'react';
 import { Modal, View, TouchableOpacity, StyleSheet, Pressable, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from './Text';
 import { X } from 'lucide-react-native';
 
@@ -8,10 +9,12 @@ interface AppModalProps {
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
-  height?: number;
+  maxHeight?: string | number;
 }
 
-export function AppModal({ visible, onClose, title, children, height }: AppModalProps) {
+export function AppModal({ visible, onClose, title, children, maxHeight = '90%' }: AppModalProps) {
+  const insets = useSafeAreaInsets();
+
   return (
     <Modal
       visible={visible}
@@ -19,56 +22,62 @@ export function AppModal({ visible, onClose, title, children, height }: AppModal
       animationType="slide"
       onRequestClose={onClose}
     >
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
-      >
+      <View style={styles.container}>
         <Pressable 
           style={styles.overlay} 
           onPress={onClose}
+        />
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          className="w-full"
         >
-          <View 
-            className="bg-white rounded-t-[48px] shadow-2xl w-full overflow-hidden"
-            style={{ maxHeight: '90%', minHeight: 200 }}
-          >
-            {/* Grab Handle */}
-            <View className="items-center py-5">
-              <View className="w-12 h-1.5 bg-slate-200 rounded-full" />
-            </View>
-
-            {/* Header */}
-            <View className="px-8 flex-row items-center justify-between mb-6">
-              {title ? (
-                <Text weight="bold" className="text-2xl text-slate-900">{title}</Text>
-              ) : <View />}
-              <TouchableOpacity 
-                onPress={onClose}
-                className="w-10 h-10 items-center justify-center rounded-full bg-slate-50"
-              >
-                <X size={20} color="#64748B" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Content */}
-            <ScrollView 
-              className="px-8 pb-12" 
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{ paddingBottom: 40 }}
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <View 
+              className="bg-white w-full rounded-t-[48px] shadow-2xl overflow-hidden"
+              style={{ 
+                maxHeight: maxHeight as any,
+                paddingBottom: Math.max(insets.bottom, 20)
+              }}
             >
-              {children}
-            </ScrollView>
-          </View>
-        </Pressable>
-      </KeyboardAvoidingView>
+              <View className="items-center py-5">
+                <View className="w-12 h-1.5 bg-slate-200 rounded-full" />
+              </View>
+
+              {title && (
+                <View className="flex-row justify-between items-center px-8 mb-6">
+                  <Text weight="bold" className="text-2xl text-slate-900">{title}</Text>
+                  <TouchableOpacity 
+                    onPress={onClose}
+                    className="w-10 h-10 items-center justify-center rounded-full bg-slate-50"
+                  >
+                    <X size={20} color="#64748B" />
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              <ScrollView 
+                showsVerticalScrollIndicator={false}
+                className="px-8"
+              >
+                <View className="pb-10">
+                  {children}
+                </View>
+              </ScrollView>
+            </View>
+          </Pressable>
+        </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
+  container: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.4)',
     justifyContent: 'flex-end',
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(15, 23, 42, 0.4)',
   },
 });

@@ -132,15 +132,13 @@ export default function PlatformSettingsScreen() {
               </View>
             </View>
           </View>
-
-          <Button 
-            title={saving ? "Saving..." : "Save Changes"} 
-            onPress={handleSave} 
-            loading={saving}
-            size="lg"
-            className="mt-10 rounded-full h-16 shadow-xl shadow-primary/20 mb-10"
-          />
         </ScrollView>
+        <Button 
+          title={saving ? "Saving..." : "Save Changes"} 
+          onPress={handleSave} 
+          loading={saving}
+          className="mb-6 h-16 rounded-2xl shadow-lg shadow-primary/20"
+        />
       </View>
     </SafeAreaView>
   );

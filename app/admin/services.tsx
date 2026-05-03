@@ -12,7 +12,6 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useDisclosure } from "@/hooks/useDisclosure";
 import { useToast } from "@/context/ToastContext";
 import { serviceService, Category, Service } from "@/services/serviceService";
-import { configService, PlatformSettings } from "@/services/configService";
 import { storageService } from "@/services/storageService";
 import { DeleteModal } from "@/components/ui/DeleteModal";
 import { ImageSourceModal } from "@/components/ui/ImageSourceModal";
@@ -26,7 +25,6 @@ export default function ServiceManagement() {
   
   const [services, setServices] = useState<Service[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [settings, setSettings] = useState<PlatformSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -40,26 +38,20 @@ export default function ServiceManagement() {
   const [description, setDescription] = useState("");
   const [imageUri, setImageUri] = useState<string | null>(null);
 
-  const fetchData = async () => {
-    try {
-      const [cats, servs, config] = await Promise.all([
-        serviceService.getCategories(),
-        serviceService.getPopularServices(),
-        configService.getSettings()
-      ]);
-      setCategories(cats);
-      setServices(servs);
-      setSettings(config);
-    } catch (error) {
-      showToast("Failed to fetch data", "error");
-    } finally {
+  useEffect(() => {
+    const fetchCats = async () => {
+      const data = await serviceService.getCategories();
+      setCategories(data);
+    };
+    fetchCats();
+
+    const unsubscribe = serviceService.subscribeToTemplates((data) => {
+      setServices(data);
       setLoading(false);
       setRefreshing(false);
-    }
-  };
+    });
 
-  useEffect(() => {
-    fetchData();
+    return () => unsubscribe && unsubscribe();
   }, []);
 
   const handlePickImage = async (useCamera: boolean) => {
@@ -90,7 +82,8 @@ export default function ServiceManagement() {
         image: downloadUrl,
         rating: "5.0",
         reviews: "0",
-        providerId: "system-admin"
+        providerId: "system-admin",
+        isTemplate: true
       });
       showToast("Service added successfully", "success");
       setTitle("");
@@ -99,145 +92,139 @@ export default function ServiceManagement() {
       setDescription("");
       setImageUri(null);
       addDisclosure.close();
-      fetchData();
     } catch (error) {
       showToast("Failed to add service", "error");
     } finally {
+      setSubmitting(true);
       setSubmitting(false);
     }
   };
 
-  const handleConfirmDelete = async () => {
+  const handleDelete = async () => {
     if (!deleteId) return;
     setDeleting(true);
     try {
       await serviceService.deleteService(deleteId);
-      showToast("Service deleted", "success");
+      showToast("Service removed", "success");
       setDeleteId(null);
-      fetchData();
     } catch (error) {
-      showToast("Delete failed", "error");
+      showToast("Failed to delete service", "error");
     } finally {
       setDeleting(false);
     }
   };
 
-  if (loading) return <LoadingState message="Syncing marketplace services..." />;
+  if (loading && !refreshing) return <LoadingState />;
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-      <DeleteModal 
-        visible={!!deleteId}
-        onClose={() => setDeleteId(null)}
-        onConfirm={handleConfirmDelete}
-        loading={deleting}
-        title="Delete Service"
-        description="Are you sure you want to remove this service? This action cannot be undone."
-      />
-      <ImageSourceModal 
-        visible={showPicker}
-        onClose={() => setShowPicker(false)}
-        onSelect={handlePickImage}
-      />
-      <View className="flex-1 px-6 pt-4">
-        <View className="flex-row items-center justify-between mb-8">
-          <TouchableOpacity onPress={() => router.back()} className="h-12 w-12 items-center justify-center border border-slate-100 rounded-2xl">
-            <ArrowLeft size={22} color="#0F172A" />
-          </TouchableOpacity>
-          <Text weight="bold" className="text-xl text-slate-900">Services</Text>
-          <TouchableOpacity onPress={addDisclosure.open} className="h-12 w-12 items-center justify-center bg-primary rounded-2xl">
+    <View className="flex-1 bg-white">
+      <SafeAreaView edges={["top"]} className="flex-1">
+        <View className="flex-row items-center justify-between px-6 py-4">
+          <View className="flex-row items-center gap-4">
+            <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2">
+              <ArrowLeft size={24} color="#1E293B" />
+            </TouchableOpacity>
+            <Text weight="bold" className="text-2xl text-slate-900">Marketplace</Text>
+          </View>
+          <TouchableOpacity 
+            onPress={addDisclosure.open}
+            className="w-10 h-10 bg-primary rounded-xl items-center justify-center shadow-lg shadow-primary/20"
+          >
             <Plus size={22} color="white" />
           </TouchableOpacity>
         </View>
 
         <ScrollView 
+          className="flex-1 px-6"
           showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchData(); }} colors={['#4C6FFF']} />
-          }
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => setRefreshing(true)} />}
         >
           {services.length === 0 ? (
             <EmptyState 
-              title="No services found" 
-              description="Your marketplace is empty. Create your first service listing." 
+              title="No services yet" 
+              description="Add template services for providers to apply" 
               icon={Briefcase}
-              actionTitle="Add Service"
-              onAction={addDisclosure.open}
             />
           ) : (
-            <View className="gap-5 pb-10">
+            <View className="py-4 gap-4">
               {services.map((service) => (
                 <ServiceListItem 
                   key={service.id} 
                   service={service} 
-                  onDelete={setDeleteId} 
+                  onDelete={() => setDeleteId(service.id)}
                 />
               ))}
             </View>
           )}
         </ScrollView>
 
-        <ModalLayout visible={addDisclosure.isOpen} onClose={addDisclosure.close} title="New Service">
-          <View className="mt-2">
-            <Input 
-              label="Service Title" 
-              placeholder="e.g. Premium Cleaning" 
-              value={title} 
-              onChangeText={setTitle} 
-            />
-            <View className="flex-row gap-4">
-              <View className="flex-1">
-                <Input 
-                  label={`Price (${settings?.currencyCode || 'USD'})`} 
-                  placeholder="0.00" 
-                  keyboardType="numeric"
-                  value={price} 
-                  onChangeText={setPrice} 
-                />
-              </View>
-            </View>
-            <Selector 
-              label="Select Category"
-              options={categories.map(c => ({ label: c.name, value: c.name }))}
-              value={category}
-              onSelect={setCategory}
-            />
-            <Input 
-              label="Description" 
-              placeholder="Briefly describe the service offering..." 
-              value={description} 
-              onChangeText={setDescription} 
-              multiline
-              numberOfLines={3}
-            />
-            
-            <View className="mt-4">
-              <Text weight="semibold" className="text-slate-700 text-sm mb-3">Service Image</Text>
-              <TouchableOpacity 
-                onPress={() => setShowPicker(true)}
-                className="w-full h-48 bg-slate-50 rounded-[32px] border-2 border-dashed border-slate-200 items-center justify-center overflow-hidden"
-              >
-                {imageUri ? (
-                  <Image source={{ uri: imageUri }} className="w-full h-full" />
-                ) : (
-                  <View className="items-center">
-                    <View className="w-16 h-16 bg-white rounded-full items-center justify-center shadow-sm mb-3">
-                      <ImageIcon size={28} color="#4C6FFF" />
-                    </View>
-                    <Text weight="medium" className="text-slate-400">Add Service Photo</Text>
+        <ModalLayout
+          visible={addDisclosure.isOpen}
+          onClose={addDisclosure.close}
+          title="Add Template Service"
+        >
+          <ScrollView className="p-6" showsVerticalScrollIndicator={false}>
+            <TouchableOpacity 
+              onPress={() => setShowPicker(true)}
+              className="w-full h-48 bg-slate-50 rounded-[32px] border-2 border-dashed border-slate-200 items-center justify-center mb-8 overflow-hidden"
+            >
+              {imageUri ? (
+                <Image source={{ uri: imageUri }} className="w-full h-full" />
+              ) : (
+                <View className="items-center">
+                  <View className="w-14 h-14 bg-white rounded-2xl items-center justify-center shadow-sm mb-3">
+                    <ImageIcon size={24} color="#4C6FFF" />
                   </View>
-                )}
-              </TouchableOpacity>
+                  <Text weight="bold" className="text-slate-400 text-xs">Upload Service Image</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <View className="gap-y-1">
+              <Input label="Service Title" placeholder="e.g. Home Cleaning" value={title} onChangeText={setTitle} />
+              <Input label="Base Price ($)" placeholder="0.00" keyboardType="numeric" value={price} onChangeText={setPrice} />
+              <Selector 
+                label="Category" 
+                options={categories.map(c => ({ label: c.name, value: c.name }))} 
+                value={category} 
+                onSelect={setCategory} 
+                placeholder="Select category"
+              />
+              <Input 
+                label="Description" 
+                placeholder="Describe the service details..." 
+                value={description} 
+                onChangeText={setDescription} 
+                multiline 
+                numberOfLines={4}
+                className="h-32 pt-4"
+              />
             </View>
+
             <Button 
-              title={submitting ? "Publishing..." : "Create Service"} 
+              title="Create Template" 
               onPress={handleAddService} 
               loading={submitting}
-              className="mt-10 rounded-full h-16"
+              className="mt-6 mb-12"
             />
-          </View>
+          </ScrollView>
         </ModalLayout>
-      </View>
-    </SafeAreaView>
+
+        <DeleteModal 
+          visible={!!deleteId}
+          onClose={() => setDeleteId(null)}
+          onConfirm={handleDelete}
+          loading={deleting}
+          title="Remove Service?"
+          description="This will remove this service template from the provider marketplace."
+        />
+
+        <ImageSourceModal 
+          visible={showPicker}
+          onClose={() => setShowPicker(false)}
+          onSelect={handlePickImage}
+        />
+      </SafeAreaView>
+    </View>
   );
 }

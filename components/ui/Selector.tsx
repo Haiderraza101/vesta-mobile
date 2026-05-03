@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { View, TouchableOpacity, Modal, FlatList, SafeAreaView } from "react-native";
+import { View, TouchableOpacity, Modal, FlatList } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "./Text";
 import { cn } from "../../utils/utils";
 import { ChevronDown, X } from "lucide-react-native";

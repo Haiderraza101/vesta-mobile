@@ -1,12 +1,17 @@
 import React, { useState, useRef, useCallback } from "react";
-import { View, StatusBar, ActivityIndicator, ScrollView } from "react-native";
+import { View, StatusBar, ActivityIndicator, ScrollView, Image, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect, Href } from "expo-router";
 import { 
   Layers, 
-  Briefcase, 
-  ShieldCheck, 
-  Settings
+  Settings,
+  Package,
+  UserPlus,
+  LayoutGrid,
+  Sparkles,
+  UserCheck,
+  Camera as CameraIcon,
+  MessageSquare
 } from "lucide-react-native";
 import { userService } from "@/services/userService";
 import { storageService } from "@/services/storageService";
@@ -32,7 +37,7 @@ export default function AdminDashboard() {
   const router = useRouter();
   const { user, userProfile, signOut } = useAuth();
   const { showToast } = useToast();
-  const { stats, loading, refreshStats } = useAdminStats();
+  const { stats, loading } = useAdminStats();
   
   const logoutDisclosure = useDisclosure();
   const editDisclosure = useDisclosure();
@@ -43,20 +48,6 @@ export default function AdminDashboard() {
   const [name, setName] = useState(userProfile?.fullName || "");
   const [updating, setUpdating] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await refreshStats();
-    setRefreshing(false);
-    showToast("Data updated", "success");
-  };
-
-  useFocusEffect(
-    useCallback(() => {
-      refreshStats();
-    }, [])
-  );
 
   const handleUpdateProfile = async () => {
     if (!userProfile?.uid) return;
@@ -100,80 +91,132 @@ export default function AdminDashboard() {
     }
   };
 
-  const ADMIN_MENU = [
-    { id: 'cats', title: "Categories", subtitle: "Manage groupings", icon: Layers, route: "/admin/categories" },
-    { id: 'services', title: "Services", subtitle: "Manage listings", icon: Briefcase, route: "/admin/services" },
-    { id: 'users', title: "Users", subtitle: "Manage accounts", icon: ShieldCheck, route: "/admin/users" },
-    { id: 'settings', title: "Settings", subtitle: "App configuration", icon: Settings, route: "/admin/settings" }
+  const MENU_ITEMS = [
+    { id: 'hiring', title: 'Hiring Applications', subtitle: 'Approve new providers joining the platform', icon: UserCheck, route: '/admin/provider-requests' as Href },
+    { id: 'service-requests', title: 'Service Requests', subtitle: 'Moderate new service additions', icon: Layers, route: '/admin/service-requests' as Href },
+    { id: 'jobs', title: 'Job Management', subtitle: 'Oversee active bookings and jobs', icon: Package, route: '/admin/jobs' as Href },
+    { id: 'users', title: 'User Base', subtitle: 'Manage all platform users and roles', icon: UserPlus, route: '/admin/users' as Href },
+    { id: 'services', title: 'Marketplace', subtitle: 'Manage available services and pricing', icon: Layers, route: '/admin/services' as Href },
+    { id: 'categories', title: 'Categories', subtitle: 'Organize services by industry', icon: LayoutGrid, route: '/admin/categories' as Href },
+    { id: 'onboarding', title: 'Onboarding', subtitle: 'Configure platform welcome flow', icon: Sparkles, route: '/admin/onboarding' as Href },
+    { id: 'settings', title: 'Settings', subtitle: 'System preferences and security', icon: Settings, route: '/admin/settings' as Href },
   ];
 
   if (loading) return <ActivityIndicator size="large" color="#4C6FFF" className="flex-1" />;
 
   return (
-    <SafeAreaView className="flex-1 bg-[#F8FAFC]" edges={['top']}>
+    <View className="flex-1 bg-white">
       <StatusBar barStyle="dark-content" />
-      
-      {activeTab === 'home' && (
-        <HomeTab 
-          stats={stats}
-          userProfile={userProfile}
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          onProfilePress={() => setActiveTab('profile')}
-          onSeeAllActivity={() => setActiveTab('management')}
-          scrollRef={scrollRef}
+      <SafeAreaView edges={['top']} className="flex-1">
+        {activeTab === 'home' && (
+          <HomeTab 
+            userProfile={userProfile}
+            stats={stats}
+            onProfilePress={editDisclosure.open}
+            onSeeAllActivity={() => setActiveTab('analytics')}
+            scrollRef={scrollRef}
+          />
+        )}
+        
+        {activeTab === 'analytics' && (
+          <AnalyticsTab 
+            stats={stats} 
+            onManageServices={() => setActiveTab('management')}
+          />
+        )}
+
+        {activeTab === 'management' && (
+          <ManagementTab 
+            menuItems={MENU_ITEMS}
+            onItemPress={(route) => router.push(route)}
+          />
+        )}
+
+        {activeTab === 'profile' && (
+          <ProfileTab 
+            userProfile={userProfile}
+            stats={stats}
+            uploadingImage={uploadingImage}
+            onImageSelect={imageSourceDisclosure.open}
+            onEditDetails={editDisclosure.open}
+            onLogout={logoutDisclosure.open}
+          />
+        )}
+
+        <AdminBottomTabs 
+          activeTab={activeTab} 
+          onTabPress={setActiveTab} 
         />
-      )}
 
-      {activeTab === 'analytics' && (
-        <AnalyticsTab 
-          stats={stats}
-          onManageServices={() => setActiveTab('management')}
-        />
-      )}
-
-      {activeTab === 'management' && (
-        <ManagementTab 
-          menuItems={ADMIN_MENU}
-          onItemPress={(route) => router.push(route as Href<string>)}
-        />
-      )}
-
-      {activeTab === 'profile' && (
-        <ProfileTab 
-          userProfile={userProfile}
-          stats={stats}
-          uploadingImage={uploadingImage}
-          onImageSelect={imageSourceDisclosure.open}
-          onEditDetails={editDisclosure.open}
-          onLogout={logoutDisclosure.open}
-        />
-      )}
-
-      <AdminBottomTabs activeTab={activeTab} onTabPress={setActiveTab} />
-
-      <AppModal visible={editDisclosure.isOpen} onClose={editDisclosure.close} title="Edit Profile">
-        <View className="mt-4">
-          <Input label="Full Name" value={name} onChangeText={setName} />
-          <Button title="Save Changes" className="mt-6 rounded-full" onPress={handleUpdateProfile} loading={updating} />
-        </View>
-      </AppModal>
-
-      <ImageSourceModal 
-        visible={imageSourceDisclosure.isOpen}
-        onClose={imageSourceDisclosure.close}
-        onSelect={handleImageSelect}
-      />
-
-      <AppModal visible={logoutDisclosure.isOpen} onClose={logoutDisclosure.close} title="Sign Out">
-        <View className="mt-4 items-center">
-          <Text className="text-slate-500 text-center mb-8">Are you sure you want to sign out?</Text>
-          <View className="flex-row gap-4 w-full">
-            <Button title="Cancel" variant="outline" className="flex-1 rounded-2xl" onPress={logoutDisclosure.close} />
-            <Button title="Sign Out" variant="destructive" className="flex-1 rounded-2xl" onPress={handleLogout} />
+        <AppModal 
+          visible={logoutDisclosure.isOpen} 
+          onClose={logoutDisclosure.close}
+          title="Sign Out"
+        >
+          <View className="p-6">
+            <Text className="text-slate-500 text-center mb-8">Are you sure you want to sign out from the admin panel?</Text>
+            <View className="flex-row gap-4">
+              <Button 
+                title="Cancel" 
+                variant="outline" 
+                className="flex-1" 
+                onPress={logoutDisclosure.close} 
+              />
+              <Button 
+                title="Sign Out" 
+                className="flex-1 bg-rose-500" 
+                onPress={handleLogout} 
+              />
+            </View>
           </View>
-        </View>
-      </AppModal>
-    </SafeAreaView>
+        </AppModal>
+
+        <AppModal 
+          visible={editDisclosure.isOpen} 
+          onClose={editDisclosure.close}
+          title="Edit Profile"
+        >
+          <View className="p-6">
+            <View className="items-center mb-8">
+              <TouchableOpacity onPress={imageSourceDisclosure.open}>
+                <View className="w-24 h-24 rounded-[32px] bg-slate-50 items-center justify-center overflow-hidden border border-slate-100">
+                  {uploadingImage ? (
+                    <ActivityIndicator color="#4C6FFF" />
+                  ) : userProfile?.avatar ? (
+                    <Image source={{ uri: userProfile.avatar }} className="w-full h-full" />
+                  ) : (
+                    <Text weight="bold" className="text-3xl text-primary">{userProfile?.fullName?.charAt(0) || 'A'}</Text>
+                  )}
+                </View>
+                <View className="absolute bottom-0 right-0 w-8 h-8 bg-primary rounded-full items-center justify-center border-2 border-white">
+                   <CameraIcon size={14} color="white" />
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            <View className="gap-y-4 mb-8">
+              <Input 
+                label="Full Name"
+                placeholder="Enter your name"
+                value={name}
+                onChangeText={setName}
+              />
+            </View>
+
+            <Button 
+              title="Save Changes" 
+              loading={updating}
+              onPress={handleUpdateProfile} 
+            />
+          </View>
+        </AppModal>
+
+        <ImageSourceModal 
+          visible={imageSourceDisclosure.isOpen}
+          onClose={imageSourceDisclosure.close}
+          onSelect={handleImageSelect}
+        />
+      </SafeAreaView>
+    </View>
   );
 }

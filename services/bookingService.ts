@@ -9,7 +9,8 @@ import {
   onSnapshot,
   orderBy,
   serverTimestamp,
-  Timestamp
+  Timestamp,
+  increment
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { UserRole } from './userService';
@@ -29,7 +30,13 @@ export interface Booking {
   date: string;
   time: string;
   address: string;
+  location: string;
+  notes?: string;
   createdAt: any;
+  rating?: number;
+  review?: string;
+  customerRating?: number;
+  customerReview?: string;
 }
 
 export const bookingService = {
@@ -44,13 +51,12 @@ export const bookingService = {
       await notificationService.sendNotification({
         userId: booking.providerId,
         title: "New Booking Request",
-        message: `You have a new booking for ${booking.serviceName}`,
+        message: `You have a new booking request for ${booking.serviceName}`,
         type: 'booking'
       });
 
       return docRef.id;
     } catch (error) {
-      console.error("Error creating booking:", error);
       throw error;
     }
   },
@@ -64,7 +70,6 @@ export const bookingService = {
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
     } catch (error) {
-      console.error("Error getting customer bookings:", error);
       throw error;
     }
   },
@@ -78,7 +83,6 @@ export const bookingService = {
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
     } catch (error) {
-      console.error("Error getting provider bookings:", error);
       throw error;
     }
   },
@@ -88,24 +92,54 @@ export const bookingService = {
       const docRef = doc(db, 'bookings', bookingId);
       await updateDoc(docRef, { status });
     } catch (error) {
-      console.error("Error updating booking status:", error);
+      throw error;
+    }
+  },
+
+  rateProvider: async (bookingId: string, providerId: string, rating: number, review: string) => {
+    try {
+      const bookingRef = doc(db, 'bookings', bookingId);
+      await updateDoc(bookingRef, { 
+        rating, 
+        review,
+        status: 'completed' 
+      });
+
+      const providerRef = doc(db, 'users', providerId);
+      await updateDoc(providerRef, {
+        totalRatings: increment(1),
+        ratingSum: increment(rating),
+      });
+
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  rateCustomer: async (bookingId: string, customerId: string, rating: number, review: string) => {
+    try {
+      const bookingRef = doc(db, 'bookings', bookingId);
+      await updateDoc(bookingRef, { 
+        customerRating: rating, 
+        customerReview: review 
+      });
+    } catch (error) {
       throw error;
     }
   },
 
   subscribeToBookings: (userId: string, role: UserRole, callback: (bookings: Booking[]) => void) => {
-    let q;
-    if (role === 'admin') {
-      q = query(collection(db, 'bookings'));
-    } else {
-      q = query(
-        collection(db, 'bookings'),
-        where(role === 'provider' ? 'providerId' : 'customerId', '==', userId)
-      );
-    }
+    const field = role === 'customer' ? 'customerId' : 'providerId';
+    const q = query(
+      collection(db, 'bookings'),
+      where(field, '==', userId)
+    );
 
     return onSnapshot(q, (snapshot) => {
-      const bookings = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
+      const bookings = snapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data() 
+      } as Booking));
       callback(bookings);
     });
   }

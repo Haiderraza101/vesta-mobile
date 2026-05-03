@@ -2,9 +2,8 @@ import React from "react";
 import { View, TouchableOpacity, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Text } from "../../components/ui/Text";
-import { Button } from "../../components/ui/Button";
-import { ArrowLeft, User, Briefcase, ChevronRight } from "lucide-react-native";
+import { Text } from "@/components/ui/Text";
+import { ArrowLeft, User, Briefcase, ChevronRight, Sparkles } from "lucide-react-native";
 import { LinearGradient } from 'expo-linear-gradient';
 
 export default function RoleSelection() {
@@ -18,53 +17,86 @@ export default function RoleSelection() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+    <View className="flex-1 bg-white">
       <StatusBar barStyle="dark-content" />
-      <View className="flex-1 px-8">
-        <TouchableOpacity 
-          onPress={() => router.back()}
-          className="mt-4 mb-10 h-12 w-12 items-center justify-center border border-slate-100 rounded-2xl shadow-sm bg-white"
-        >
-          <ArrowLeft size={22} color="#1E293B" strokeWidth={2.5} />
-        </TouchableOpacity>
-
-        <View className="mb-12">
-          <Text weight="bold" className="text-4xl mb-4 text-slate-900">Join Vesta</Text>
-          <Text className="text-slate-500 text-lg leading-7">Choose how you want to use the marketplace today.</Text>
+      <SafeAreaView className="flex-1" edges={['top']}>
+        
+        <View className="px-8 pt-4">
+          <TouchableOpacity 
+            onPress={() => router.back()}
+            className="h-12 w-12 items-center justify-center border border-slate-100 rounded-2xl bg-white shadow-sm"
+          >
+            <ArrowLeft size={20} color="#1E293B" strokeWidth={2.5} />
+          </TouchableOpacity>
         </View>
 
-        <View className="gap-6">
+        <View className="px-8 mt-10 mb-12">
+          <View className="flex-row items-center gap-2 mb-4">
+            <View className="bg-primary/10 px-3 py-1 rounded-full">
+              <Text weight="bold" className="text-primary text-[10px] uppercase tracking-widest">Get Started</Text>
+            </View>
+            <Sparkles size={14} color="#4C6FFF" />
+          </View>
+          <Text weight="bold" className="text-4xl text-slate-900 tracking-tight leading-[48px]">
+            Join the{"\n"}
+            Vesta Community
+          </Text>
+          <Text className="text-slate-500 text-base mt-4 leading-6">
+            Choose your path to begin your journey with our professional marketplace.
+          </Text>
+        </View>
+
+        <View className="px-8 gap-6">
           <TouchableOpacity 
-            activeOpacity={0.7}
+            activeOpacity={0.9}
             onPress={() => handleSelect('customer')}
-            className="p-8 rounded-[40px] bg-slate-50 border border-slate-100 flex-row items-center gap-6"
+            className="relative overflow-hidden"
           >
-            <View className="w-20 h-20 bg-white rounded-3xl items-center justify-center shadow-sm">
-              <User size={32} color="#4C6FFF" strokeWidth={2.5} />
-            </View>
-            <View className="flex-1">
-              <Text weight="bold" className="text-xl text-slate-900 mb-1">Customer</Text>
-              <Text className="text-slate-500 text-sm leading-5">I want to book professional services for my home.</Text>
-            </View>
-            <ChevronRight size={20} color="#CBD5E1" strokeWidth={3} />
+            <LinearGradient
+              colors={['#F8FAFC', '#F1F5F9']}
+              className="p-8 rounded-[32px] border border-slate-100 flex-row items-center gap-6"
+            >
+              <View className="w-16 h-16 bg-white rounded-2xl items-center justify-center shadow-md">
+                <User size={28} color="#4C6FFF" strokeWidth={2.5} />
+              </View>
+              <View className="flex-1">
+                <Text weight="bold" className="text-xl text-slate-900 mb-1">Customer</Text>
+                <Text className="text-slate-500 text-xs leading-4">Book services for your home</Text>
+              </View>
+              <View className="w-10 h-10 bg-white rounded-full items-center justify-center border border-slate-50 shadow-sm">
+                <ChevronRight size={18} color="#4C6FFF" strokeWidth={3} />
+              </View>
+            </LinearGradient>
           </TouchableOpacity>
 
           <TouchableOpacity 
-            activeOpacity={0.7}
+            activeOpacity={0.9}
             onPress={() => handleSelect('provider')}
-            className="p-8 rounded-[40px] bg-primary/5 border border-primary/10 flex-row items-center gap-6"
+            className="relative overflow-hidden"
           >
-            <View className="w-20 h-20 bg-white rounded-3xl items-center justify-center shadow-sm">
-              <Briefcase size={32} color="#4C6FFF" strokeWidth={2.5} />
-            </View>
-            <View className="flex-1">
-              <Text weight="bold" className="text-xl text-slate-900 mb-1">Service Provider</Text>
-              <Text className="text-slate-500 text-sm leading-5">I want to offer my services and find new jobs.</Text>
-            </View>
-            <ChevronRight size={20} color="#CBD5E1" strokeWidth={3} />
+            <LinearGradient
+              colors={['#F8FAFC', '#F1F5F9']}
+              className="p-8 rounded-[32px] border border-slate-100 flex-row items-center gap-6"
+            >
+              <View className="w-16 h-16 bg-white rounded-2xl items-center justify-center shadow-md">
+                <Briefcase size={28} color="#4C6FFF" strokeWidth={2.5} />
+              </View>
+              <View className="flex-1">
+                <Text weight="bold" className="text-xl text-slate-900 mb-1">Provider</Text>
+                <Text className="text-slate-500 text-xs leading-4">Find jobs and grow your business</Text>
+              </View>
+              <View className="w-10 h-10 bg-white rounded-full items-center justify-center border border-slate-50 shadow-sm">
+                <ChevronRight size={18} color="#4C6FFF" strokeWidth={3} />
+              </View>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
-      </View>
-    </SafeAreaView>
+
+        <View className="mt-auto px-8 mb-8 items-center">
+          <Text className="text-slate-400 text-xs">By joining, you agree to our Terms and Privacy Policy</Text>
+        </View>
+
+      </SafeAreaView>
+    </View>
   );
 }

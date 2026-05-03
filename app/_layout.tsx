@@ -5,8 +5,11 @@ import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, P
 import * as SplashScreen from "expo-splash-screen";
 import { ThemeProvider } from "../context/ThemeContext";
 import { ToastProvider } from "../context/ToastContext";
-import { AuthProvider } from "../context/AuthContext";
+import { AuthProvider } from "@/context/AuthContext";
+import { ConfigProvider } from "@/context/ConfigContext";
 import "../globals.css";
+
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -31,19 +34,23 @@ export default function RootLayout() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ThemeProvider>
-          <ToastProvider>
-            <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
-              <Stack.Screen name="splash" />
-              <Stack.Screen name="(auth)" options={{ animation: 'slide_from_bottom' }} />
-              <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
-              <Stack.Screen name="book-service" options={{ animation: 'slide_from_bottom' }} />
-            </Stack>
-          </ToastProvider>
-        </ThemeProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <SafeAreaProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ConfigProvider>
+            <ThemeProvider>
+              <ToastProvider>
+                <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
+                  <Stack.Screen name="splash" />
+                  <Stack.Screen name="(auth)" options={{ animation: 'slide_from_bottom' }} />
+                  <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+                  <Stack.Screen name="book-service" options={{ animation: 'slide_from_bottom' }} />
+                </Stack>
+              </ToastProvider>
+            </ThemeProvider>
+          </ConfigProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </SafeAreaProvider>
   );
 }

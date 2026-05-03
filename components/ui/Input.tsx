@@ -35,7 +35,7 @@ export function Input({
         <Text weight="bold" className="text-slate-800 mb-2.5 ml-1 text-[13px] uppercase tracking-widest">{label}</Text>
       )}
       <View 
-        className={`flex-row items-center bg-white rounded-[24px] px-5 h-[64px] border ${
+        className={`flex-row items-center bg-white rounded-2xl px-5 h-[56px] border ${
           isFocused ? 'border-primary' : 'border-slate-100'
         }`}
       >

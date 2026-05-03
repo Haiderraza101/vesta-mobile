@@ -2,18 +2,19 @@ import React from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/Text';
 import { ChevronRight, LucideIcon } from 'lucide-react-native';
+import { Href } from 'expo-router';
 
-interface ManagementItem {
+export interface ManagementItem {
   id: string;
   title: string;
   subtitle: string;
   icon: LucideIcon;
-  route: string;
+  route: Href;
 }
 
 interface ManagementTabProps {
   menuItems: ManagementItem[];
-  onItemPress: (route: string) => void;
+  onItemPress: (route: Href) => void;
 }
 
 export function ManagementTab({ menuItems, onItemPress }: ManagementTabProps) {

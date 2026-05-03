@@ -9,10 +9,11 @@ export default function TabLayout() {
   if (loading) return null;
   if (!user) return <Redirect href="/(auth)/login" />;
   
-  // Admin Guard: Admins should not be in (tabs)
   if (userProfile?.role === 'admin') {
     return <Redirect href="/admin" />;
   }
+
+  if (loading) return null;
 
   return (
     <Tabs
