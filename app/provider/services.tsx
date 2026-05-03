@@ -92,7 +92,7 @@ export default function ProviderServicesScreen() {
   const handleEdit = (service: Service) => {
     setEditingService(service);
     setTitle(service.title);
-    setPrice(service.price.replace('$', ''));
+    setPrice(service.price.toString().replace('$', ''));
     setDescription(service.description);
     setCategory(service.category);
     setImage(service.image);

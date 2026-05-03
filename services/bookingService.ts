@@ -24,7 +24,7 @@ export interface Booking {
   serviceId: string;
   serviceName: string;
   serviceImage: string;
-  price: string;
+  price: string | number;
   status: BookingStatus;
   date: string;
   time: string;

@@ -23,7 +23,7 @@ export interface Category {
 export interface Service {
   id: string;
   title: string;
-  price: string;
+  price: string | number;
   rating: string;
   reviews: string;
   description: string;

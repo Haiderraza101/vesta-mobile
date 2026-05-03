@@ -104,8 +104,8 @@ export default function HomeDashboard() {
     })
     .sort((a: Service, b: Service) => {
       if (sortOrder === 'none') return 0;
-      const priceA = parseFloat(a.price.replace('$', ''));
-      const priceB = parseFloat(b.price.replace('$', ''));
+      const priceA = parseFloat(String(a.price || '0').replace('$', '').replace(',', ''));
+      const priceB = parseFloat(String(b.price || '0').replace('$', '').replace(',', ''));
       return sortOrder === 'asc' ? priceA - priceB : priceB - priceA;
     });
 

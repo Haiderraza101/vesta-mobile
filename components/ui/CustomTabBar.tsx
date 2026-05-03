@@ -11,8 +11,14 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
     <View className="absolute bottom-14 left-6 right-6">
       <View className="bg-slate-900 h-20 rounded-full flex-row items-center justify-around px-4 shadow-2xl shadow-slate-900/40 border border-white/5">
         {state.routes.map((route, index) => {
-          const { options } = descriptors[route.key];
+          const descriptor = descriptors[route.key];
+          if (!descriptor) return null;
+          
+          const { options } = descriptor;
           const isFocused = state.index === index;
+
+          // Skip hidden tabs (Expo Router convention)
+          if ((options as any).href === null) return null;
 
           const onPress = () => {
             const event = navigation.emit({

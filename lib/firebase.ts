@@ -1,5 +1,8 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { initializeAuth, getAuth } from 'firebase/auth';
+// @ts-ignore - getReactNativePersistence is available at runtime in RN but may not show in some TS configs
+import { getReactNativePersistence } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
@@ -13,10 +16,15 @@ const firebaseConfig = {
   appId: "1:779326097876:android:aedb21b519f9ebee072e41"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase with singleton pattern
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-export const auth = getAuth(app);
+// Configure Auth with AsyncStorage persistence
+export const auth = getApps().length > 0
+  ? getAuth(app)
+  : initializeAuth(app, {
+    persistence: getReactNativePersistence(AsyncStorage)
+  });
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 export default app;

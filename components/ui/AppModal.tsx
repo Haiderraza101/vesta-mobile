@@ -21,40 +21,45 @@ export function AppModal({ visible, onClose, title, children, height }: AppModal
     >
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.overlay}
+        className="flex-1"
       >
-        <Pressable style={styles.backdrop} onPress={onClose} />
-        <View 
-          className="bg-white rounded-t-[40px] shadow-2xl w-full"
-          style={{ maxHeight: '90%', minHeight: 200 }}
+        <Pressable 
+          style={styles.overlay} 
+          onPress={onClose}
         >
-          {/* Handle */}
-          <View className="items-center py-4">
-            <View className="w-12 h-1.5 bg-slate-200 rounded-full" />
-          </View>
-
-          {/* Header */}
-          <View className="px-8 flex-row items-center justify-between mb-4">
-            {title ? (
-              <Text weight="bold" className="text-2xl text-slate-900">{title}</Text>
-            ) : <View />}
-            <TouchableOpacity 
-              onPress={onClose}
-              className="w-10 h-10 items-center justify-center rounded-full bg-slate-50"
-            >
-              <X size={20} color="#64748B" />
-            </TouchableOpacity>
-          </View>
-
-          {/* Content */}
-          <ScrollView 
-            className="px-8 pb-12" 
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
+          <View 
+            className="bg-white rounded-t-[48px] shadow-2xl w-full overflow-hidden"
+            style={{ maxHeight: '90%', minHeight: 200 }}
           >
-            {children}
-          </ScrollView>
-        </View>
+            {/* Grab Handle */}
+            <View className="items-center py-5">
+              <View className="w-12 h-1.5 bg-slate-200 rounded-full" />
+            </View>
+
+            {/* Header */}
+            <View className="px-8 flex-row items-center justify-between mb-6">
+              {title ? (
+                <Text weight="bold" className="text-2xl text-slate-900">{title}</Text>
+              ) : <View />}
+              <TouchableOpacity 
+                onPress={onClose}
+                className="w-10 h-10 items-center justify-center rounded-full bg-slate-50"
+              >
+                <X size={20} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Content */}
+            <ScrollView 
+              className="px-8 pb-12" 
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingBottom: 40 }}
+            >
+              {children}
+            </ScrollView>
+          </View>
+        </Pressable>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -63,10 +68,7 @@ export function AppModal({ visible, onClose, title, children, height }: AppModal
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(15, 23, 42, 0.4)',
+    justifyContent: 'flex-end',
   },
 });
