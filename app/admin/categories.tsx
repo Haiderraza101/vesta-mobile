@@ -1,20 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { View, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl } from "react-native";
+import { View, ScrollView, TouchableOpacity, Image, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Text } from "../../components/ui/Text";
-import { Input } from "../../components/ui/Input";
-import { Button } from "../../components/ui/Button";
-import { ModalLayout } from "../../components/ui/ModalLayout";
-import { LoadingState } from "../../components/ui/LoadingState";
-import { EmptyState } from "../../components/ui/EmptyState";
-import { useDisclosure } from "../../hooks/useDisclosure";
-import { useToast } from "../../context/ToastContext";
-import { serviceService, Category } from "../../services/serviceService";
-import { storageService } from "../../services/storageService";
-import { DeleteModal } from "../../components/ui/DeleteModal";
-import { ImageSourceModal } from "../../components/ui/ImageSourceModal";
-import { ArrowLeft, Plus, Trash2, Image as ImageIcon, Camera } from "lucide-react-native";
+import { Text } from "@/components/ui/Text";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+import { ModalLayout } from "@/components/ui/ModalLayout";
+import { LoadingState } from "@/components/ui/LoadingState";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { useDisclosure } from "@/hooks/useDisclosure";
+import { useToast } from "@/context/ToastContext";
+import { serviceService, Category } from "@/services/serviceService";
+import { storageService } from "@/services/storageService";
+import { DeleteModal } from "@/components/ui/DeleteModal";
+import { ImageSourceModal } from "@/components/ui/ImageSourceModal";
+import { ArrowLeft, Plus, Image as ImageIcon } from "lucide-react-native";
+import { CategoryListItem } from "@/components/admin/CategoryListItem";
 
 export default function CategoryManagement() {
   const router = useRouter();
@@ -29,7 +30,6 @@ export default function CategoryManagement() {
   const [deleting, setDeleting] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   
-  // Form State
   const [name, setName] = useState("");
   const [imageUri, setImageUri] = useState<string | null>(null);
 
@@ -54,8 +54,9 @@ export default function CategoryManagement() {
       const uri = await storageService.pickImage(useCamera);
       if (uri) setImageUri(uri);
       setShowPicker(false);
-    } catch (error: any) {
-      showToast(error.message, "error");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Error picking image";
+      showToast(message, "error");
     }
   };
 
@@ -143,19 +144,11 @@ export default function CategoryManagement() {
           ) : (
             <View className="gap-4 pb-10">
               {categories.map((cat) => (
-                <View key={cat.id} className="bg-slate-50 p-5 rounded-[32px] flex-row items-center gap-5 border border-slate-100">
-                  <Image source={{ uri: cat.image }} className="w-16 h-16 rounded-2xl" />
-                  <View className="flex-1">
-                    <Text weight="bold" className="text-lg text-slate-900">{cat.name}</Text>
-                    <Text className="text-slate-400 text-xs mt-0.5">ID: {cat.id?.slice(-6)}</Text>
-                  </View>
-                  <TouchableOpacity 
-                    className="w-11 h-11 bg-white rounded-2xl items-center justify-center border border-slate-100"
-                    onPress={() => setDeleteId(cat.id)}
-                  >
-                    <Trash2 size={18} color="#64748B" />
-                  </TouchableOpacity>
-                </View>
+                <CategoryListItem 
+                  key={cat.id} 
+                  category={cat} 
+                  onDelete={setDeleteId} 
+                />
               ))}
             </View>
           )}

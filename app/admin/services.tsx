@@ -1,23 +1,23 @@
 import React, { useState, useEffect } from "react";
-import { View, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl } from "react-native";
+import { View, ScrollView, TouchableOpacity, Image, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Text } from "../../components/ui/Text";
-import { Input } from "../../components/ui/Input";
-import { Button } from "../../components/ui/Button";
-import { Selector } from "../../components/ui/Selector";
-import { ModalLayout } from "../../components/ui/ModalLayout";
-import { LoadingState } from "../../components/ui/LoadingState";
-import { EmptyState } from "../../components/ui/EmptyState";
-import { useDisclosure } from "../../hooks/useDisclosure";
-import { useToast } from "../../context/ToastContext";
-import { serviceService, Category, Service } from "../../services/serviceService";
-import { configService, PlatformSettings } from "../../services/configService";
-import { storageService } from "../../services/storageService";
-import { Price } from "../../components/ui/Price";
-import { DeleteModal } from "../../components/ui/DeleteModal";
-import { ImageSourceModal } from "../../components/ui/ImageSourceModal";
-import { ArrowLeft, Plus, Trash2, Tag, DollarSign, Image as ImageIcon, AlignLeft, Briefcase } from "lucide-react-native";
+import { Text } from "@/components/ui/Text";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+import { Selector } from "@/components/ui/Selector";
+import { ModalLayout } from "@/components/ui/ModalLayout";
+import { LoadingState } from "@/components/ui/LoadingState";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { useDisclosure } from "@/hooks/useDisclosure";
+import { useToast } from "@/context/ToastContext";
+import { serviceService, Category, Service } from "@/services/serviceService";
+import { configService, PlatformSettings } from "@/services/configService";
+import { storageService } from "@/services/storageService";
+import { DeleteModal } from "@/components/ui/DeleteModal";
+import { ImageSourceModal } from "@/components/ui/ImageSourceModal";
+import { ArrowLeft, Plus, Image as ImageIcon, Briefcase } from "lucide-react-native";
+import { ServiceListItem } from "@/components/admin/ServiceListItem";
 
 export default function ServiceManagement() {
   const router = useRouter();
@@ -34,7 +34,6 @@ export default function ServiceManagement() {
   const [deleting, setDeleting] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   
-  // Form State
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("");
@@ -68,8 +67,9 @@ export default function ServiceManagement() {
       const uri = await storageService.pickImage(useCamera);
       if (uri) setImageUri(uri);
       setShowPicker(false);
-    } catch (error: any) {
-      showToast(error.message, "error");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Error picking image";
+      showToast(message, "error");
     }
   };
 
@@ -167,22 +167,11 @@ export default function ServiceManagement() {
           ) : (
             <View className="gap-5 pb-10">
               {services.map((service) => (
-                <View key={service.id} className="bg-slate-50 p-5 rounded-[32px] border border-slate-100 flex-row gap-5">
-                  <Image source={{ uri: service.image }} className="w-20 h-20 rounded-2xl" />
-                  <View className="flex-1">
-                    <Text weight="bold" className="text-base text-slate-900">{service.title}</Text>
-                    <Price amount={service.price} className="mt-1" />
-                    <View className="bg-white border border-slate-100 self-start px-2.5 py-1 rounded-full mt-2">
-                      <Text weight="bold" className="text-[10px] text-slate-400 uppercase tracking-widest">{service.category}</Text>
-                    </View>
-                  </View>
-                  <TouchableOpacity 
-                    className="w-11 h-11 bg-white rounded-2xl items-center justify-center self-center border border-slate-100"
-                    onPress={() => setDeleteId(service.id)}
-                  >
-                    <Trash2 size={18} color="#64748B" />
-                  </TouchableOpacity>
-                </View>
+                <ServiceListItem 
+                  key={service.id} 
+                  service={service} 
+                  onDelete={setDeleteId} 
+                />
               ))}
             </View>
           )}

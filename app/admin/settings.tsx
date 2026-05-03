@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { View, ScrollView, TouchableOpacity, ActivityIndicator, StatusBar } from "react-native";
+import { View, ScrollView, TouchableOpacity, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Text } from "../../components/ui/Text";
-import { Input } from "../../components/ui/Input";
-import { Button } from "../../components/ui/Button";
-import { Selector } from "../../components/ui/Selector";
-import { LoadingState } from "../../components/ui/LoadingState";
-import { useToast } from "../../context/ToastContext";
-import { configService, PlatformSettings } from "../../services/configService";
-import { ArrowLeft, Globe, DollarSign, Percent } from "lucide-react-native";
+import { Text } from "@/components/ui/Text";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+import { Selector } from "@/components/ui/Selector";
+import { LoadingState } from "@/components/ui/LoadingState";
+import { useToast } from "@/context/ToastContext";
+import { configService } from "@/services/configService";
+import { ArrowLeft, Globe, Percent } from "lucide-react-native";
 
 export default function PlatformSettingsScreen() {
   const router = useRouter();
