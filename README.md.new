@@ -1,0 +1,158 @@
+# Vesta — Home Services Marketplace (Mobile)
+
+Vesta is a cross-platform mobile marketplace that connects customers with home-service providers, with an admin backend for platform moderation. The app is built with React Native and the Expo SDK, using a modular architecture, file-based routing, and end-to-end TypeScript type safety.
+
+Three roles are supported, each with its own routing tree and experience:
+- **Customer** — browses categories, books services, tracks jobs, leaves reviews.
+- **Provider** — applies via a chat-style onboarding flow, accepts/rejects jobs, manages availability.
+- **Admin** — moderates providers and bookings, manages categories, edits onboarding questions.
+
+---
+
+## Table of Contents
+1. [Installation & Setup](#installation--setup)
+2. [Environment Configuration](#environment-configuration)
+3. [Running the App](#running-the-app)
+4. [Tech Stack](#tech-stack)
+5. [Project Architecture](#project-architecture)
+6. [Data Model (Firestore)](#data-model-firestore)
+7. [Auth Flow](#auth-flow)
+8. [Development Standards](#development-standards)
+9. [Known Issues & Troubleshooting](#known-issues--troubleshooting)
+
+---
+
+## Installation & Setup
+
+### 1. System Requirements
+- Node.js (LTS)
+- Git
+- Java Development Kit (JDK)
+- Android Studio / Android SDK (for local Android builds)
+- Xcode (for local iOS builds, macOS only)
+- Expo Go (for physical device testing)
+
+### 2. Project Initialization
+```bash
+git clone https://github.com/Haiderraza101/vesta-mobile.git
+cd vesta-mobile
+npm install --legacy-peer-deps
+```
+
+---
+
+## Environment Configuration
+Environment variables are managed through a `.env` file in the project root. Reference `.env.example` for the required keys. At minimum you need:
+
+| Key | Purpose |
+| --- | --- |
+| `EXPO_PUBLIC_FIREBASE_*` | Firebase web config (Auth + Firestore + Storage) |
+| `EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name |
+| `EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET` | Cloudinary unsigned upload preset |
+
+Copy `.env.example` to `.env` and fill in real values before running the app.
+
+---
+
+## Running the App
+Launch the Metro Bundler with a clean cache:
+```bash
+npx expo start --clear
+```
+- Press `a` to target a connected Android device/emulator.
+- Press `i` to target a connected iOS simulator.
+- Scan the QR code with Expo Go to target a physical device.
+
+Platform-specific scripts:
+```bash
+npm run android   # Build & run Android
+npm run ios       # Build & run iOS
+npm run web       # Web preview
+```
+
+---
+
+## Tech Stack
+- **Framework:** React Native (Expo SDK 54)
+- **Routing:** Expo Router (file-based)
+- **Language:** TypeScript (strict)
+- **Styling:** NativeWind v4 (Tailwind CSS utility classes)
+- **State / Data:** `@tanstack/react-query` for caching, Firestore `onSnapshot` for real-time data
+- **Auth & Database:** Firebase Authentication + Cloud Firestore
+- **Media:** Firebase Storage + Cloudinary (unsigned uploads)
+- **Icons:** `lucide-react-native`
+- **Animation:** `react-native-reanimated`
+- **Persistence:** `@react-native-async-storage/async-storage`
+
+---
+
+## Project Architecture
+```
+app/              File-based routes, grouped by role (customer / provider / admin / auth)
+components/       Reusable UI components (button, input, sheet, toast, etc.)
+contexts/         React contexts (auth, toast, theme, location)
+hooks/            Custom hooks (queries, real-time subscriptions, mutations)
+services/         Business logic / Firestore modules (auth, bookings, providers, …)
+utils/            Helpers, formatters, Cloudinary uploader
+types/            Global TypeScript types and module overrides
+constants/        App-wide constants and enums
+```
+
+### Role-based routing
+- `app/(customer)/…` — Customer-facing screens (home, categories, bookings, profile).
+- `app/(provider)/…` — Provider onboarding, dashboard, and job management.
+- `app/(admin)/…`    — Admin moderation and configuration tools.
+- `app/(auth)/…`     — Sign-in / sign-up / OTP flows.
+
+The root layout reads the authenticated user's role from Firestore and redirects to the correct group.
+
+---
+
+## Data Model (Firestore)
+Top-level collections and their purpose:
+
+| Collection | Purpose |
+| --- | --- |
+| `users` | Profile data, role, and onboarding state for all users |
+| `categories` | Service categories shown to customers |
+| `services` | Service offerings under each category |
+| `providers` | Provider-specific profile, availability, and ratings |
+| `bookings` | Customer ↔ provider service jobs and their lifecycle |
+| `reviews` | Customer reviews on completed bookings |
+| `onboarding_questions` | Admin-editable questions driving the provider onboarding chat |
+| `onboarding_responses` | Provider answers to onboarding questions |
+
+Real-time updates: most collections are read with `onSnapshot` so changes propagate live across the app.
+
+---
+
+## Auth Flow
+1. User signs in via Firebase Authentication (email/password or phone OTP).
+2. The session is persisted in `AsyncStorage` so the user stays signed in across app restarts.
+3. On boot, `AuthContext` hydrates the user, then reads their role from the `users` collection in Firestore.
+4. The root layout routes the user into the correct role group (`customer`, `provider`, or `admin`).
+
+---
+
+## Development Standards
+- **Design:** Shadowless, high-contrast, institutional UI built from NativeWind utility classes.
+- **Type Safety:** Global type overrides live in `/types`; never use `@ts-ignore`.
+- **Modularity:** Keep components small and composable; business logic lives in `/services`, not in screens.
+- **Real-time first:** Prefer Firestore `onSnapshot` subscriptions for any data users need to see live.
+- **Lint:** Run `npm run lint` before opening a PR.
+
+---
+
+## Known Issues & Troubleshooting
+
+**`Cannot find module 'react-native-worklets/plugin'` during bundling:**
+1. Confirm `react-native-worklets` is installed: `npm install react-native-worklets`.
+2. Clear the Metro bundler cache: `npx expo start --clear`.
+3. Verify `babel.config.js` points to the correct plugin path.
+
+**Firebase auth errors on first run:**
+- Confirm every `EXPO_PUBLIC_FIREBASE_*` key is set in `.env`.
+- Restart Metro after editing `.env` — Expo only re-reads env vars on start.
+
+**Cloudinary uploads fail with 401:**
+- Ensure `EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET` is configured as an **unsigned** preset.
